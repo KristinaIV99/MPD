@@ -1,6 +1,6 @@
 import { TextReader } from './text-reader.js';
 import { Logger } from './logger.js';
-import DOMPurify from 'dompurify'; // Papildomas importas
+import DOMPurify from './vendor/purify.es.mjs';
 
 class App {
   constructor() {
