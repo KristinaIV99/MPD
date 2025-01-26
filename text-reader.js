@@ -23,7 +23,7 @@ export class TextReader {
      ...config
    };
 
-   this.DOMPurify = DOMPurify(window);
+   this.DOMPurify = DOMPurify;
    this.config.logger.error('DOMPurify initialized:', this.DOMPurify);
    
    this.abortController = new AbortController();
@@ -178,7 +178,7 @@ export class TextReader {
 
   _sanitizeOutput(html) {
     return this.config.sanitizeHTML 
-      ? DOMPurify.sanitize(html, {
+      ? this.DOMPurify.sanitize(html, {
           FORBID_TAGS: ['iframe', 'script'],
           FORBID_ATTR: ['onclick']
         })
