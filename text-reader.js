@@ -1,5 +1,5 @@
 import { marked } from './vendor/marked.esm.js';
-import DOMPurify from './vendor/purify.es.mjs';
+import { createDOMPurify } from './vendor/purify.es.mjs';
 import Logger from './logger.js';
 import { LOG_LEVELS } from './logger.js';
 
@@ -23,7 +23,7 @@ export class TextReader {
      ...config
    };
 
-   this.DOMPurify = DOMPurify;
+   this.DOMPurify = createDOMPurify(window);
    this.config.logger.error('DOMPurify initialized:', this.DOMPurify);
    
    this.abortController = new AbortController();
