@@ -1,47 +1,40 @@
 // text-reader.worker.js
-import { marked } from 'marked';
+import { marked } from './vendor/marked.esm.js';
+import DOMPurify from './vendor/purify.es.mjs';
 
 const activeJobs = new Map();
 
-function processJob(jobId, text) {
-    return new Promise((resolve, reject) => {
-        const abortHandler = () => {
-            reject(new Error('Užklausa atšaukta'));
-        };
-
-        const controller = new AbortController();
-        activeJobs.set(jobId, {
-            abort: () => controller.abort(),
-            controller
-        });
-
-        controller.signal.addEventListener('abort', abortHandler);
-
-        marked.parseAsync(text)
-            .then(html => {
-                controller.signal.removeEventListener('abort', abortHandler);
-                resolve(html);
-            })
-            .catch(reject);
-    });
+async function processMarkdown(text, sanitize) {
+    try {
+        const html = await marked.parse(text);
+        return sanitize 
+            ? DOMPurify.sanitize(html, {
+                FORBID_TAGS: ['iframe', 'script'],
+                FORBID_ATTR: ['onclick']
+              })
+            : html;
+    } catch (error) {
+        throw new Error(`Markdown konvertavimo klaida: ${error.message}`);
+    }
 }
 
-self.onmessage = async (e) => {
-    const { type, jobId, text } = e.data;
+self.addEventListener('message', async (e) => {
+    const { type, jobId, text, sanitize } = e.data;
 
     // Užklausos atšaukimas
     if (type === 'cancel') {
         const job = activeJobs.get(jobId);
-        if (job) {
-            job.abort();
+        if (job?.abortController) {
+            job.abortController.abort();
             activeJobs.delete(jobId);
         }
         return;
     }
 
-    // Teksto apdorojimas
+    // Naujas darbas
     if (!activeJobs.has(jobId)) {
-        activeJobs.set(jobId, { status: 'processing' });
+        const abortController = new AbortController();
+        activeJobs.set(jobId, { abortController });
 
         try {
             // Dydžio validacija
@@ -49,25 +42,27 @@ self.onmessage = async (e) => {
                 throw new Error('Tekstas viršija 10MB limitą');
             }
 
-            const html = await processJob(jobId, text);
-            
-            if (activeJobs.has(jobId)) {
-                self.postMessage({
-                    jobId,
-                    html,
-                    status: 'complete'
-                });
-            }
+            const html = await Promise.race([
+                processMarkdown(text, sanitize),
+                new Promise((_, reject) => {
+                    abortController.signal.onabort = () => 
+                        reject(new DOMException('Operation aborted', 'AbortError'));
+                })
+            ]);
+
+            self.postMessage({
+                jobId,
+                html,
+                status: 'complete'
+            });
         } catch (error) {
-            if (activeJobs.has(jobId)) {
-                self.postMessage({
-                    jobId,
-                    error: error.message,
-                    status: 'error'
-                });
-            }
+            self.postMessage({
+                jobId,
+                error: error.message,
+                status: 'error'
+            });
         } finally {
             activeJobs.delete(jobId);
         }
     }
-};
+});
