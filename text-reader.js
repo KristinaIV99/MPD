@@ -131,12 +131,12 @@ export class TextReader {
       try {
         this.worker = new Worker('./text-reader.worker.js', { type: 'module' });
         this.worker.onerror = (e) => {
-          this.config.logger.error('Worker error:', e.error);
+          this.config.logger.debug('Worker error:', e.error);
           this._workerAvailable = false;
         };
         this._workerAvailable = true;
       } catch (e) {
-        this.config.logger.error('Worker init failed:', e);
+        this.config.logger.debug('Worker init failed:', e);
         this._workerAvailable = false;
       }
     }
@@ -190,7 +190,7 @@ export class TextReader {
       const rawHtml = marked.parse(text);
       return this._sanitizeOutput(rawHtml);
     } catch (error) {
-      this.config.logger.error('Parsing error:', error);
+      this.config.logger.debug('Parsing error:', error);
       return text;
     }
   }
