@@ -1,5 +1,6 @@
 import { TextReader } from './text-reader.js';
-import { Logger } from './logger.js';
+import Logger from './logger.js' // Default export
+import { LOG_LEVELS } from './logger.js' // Named export
 import DOMPurify from './vendor/purify.es.mjs';
 
 class App {
