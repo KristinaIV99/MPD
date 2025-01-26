@@ -1,3 +1,8 @@
+import { marked } from './vendor/marked.esm.js';
+import DOMPurify from './vendor/purify.es.mjs';
+import Logger from './logger.js';
+import { LOG_LEVELS } from './logger.js';
+
 export class TextReader {
  constructor(config = {}) {
    this.config = {
