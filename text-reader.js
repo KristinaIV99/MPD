@@ -1,4 +1,4 @@
-import marked from './vendor/marked.esm.js';
+import { marked } from './vendor/marked.esm.js';
 import DOMPurify from './vendor/purify.es.mjs';
 export class TextReader {
   constructor(config = {}) {
