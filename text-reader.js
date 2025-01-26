@@ -8,7 +8,11 @@ export class TextReader {
     this.config = {
       chunkSize: 1024 * 1024,
       maxFileSize: 100 * 1024 * 1024,
-      allowedTypes: ['text/markdown', 'text/plain'],
+      allowedTypes: [
+        'text/markdown',
+        'text/plain',
+        'application/octet-stream' // Papildomas tipas
+      ],
       encoding: 'utf-8',
       maxRetries: 3,
       sanitizeHTML: true,
