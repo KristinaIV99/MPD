@@ -48,7 +48,7 @@ export class TextReader {
   }
 
   _validateFile(file) {
-    this.config.logger.info('Failo tipas:', file.type);
+    this.config.logger.error('Failo tipas:', file.type);
     
     if (file.size > this.config.maxFileSize) {
       throw new Error(`Failas viršija ${this.config.maxFileSize/1024/1024}MB ribą`);
