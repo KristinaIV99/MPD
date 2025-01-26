@@ -48,14 +48,14 @@ export class TextReader {
   }
 
   _validateFile(file) {
-    this.config.logger.error('Failo tipas:', file.type);
+    this.config.logger.error(`Failo tipas: ${file.type}`);
     
     if (file.size > this.config.maxFileSize) {
       throw new Error(`Failas viršija ${this.config.maxFileSize/1024/1024}MB ribą`);
     }
     
     if (!this.config.allowedTypes.includes(file.type)) {
-      throw new Error('Netinkamas failo formatas');
+      throw new Error(`Netinkamas failo formatas: ${file.type}. Leidžiami tipai: ${this.config.allowedTypes.join(', ')}`);
     }
   }
 
