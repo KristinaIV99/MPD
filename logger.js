@@ -1,17 +1,5 @@
 // logger.js
 export default class Logger {
-  constructor(name) {
-    this.name = name
-  }
-}
-
-export const LOG_LEVELS = {
-  ERROR: 'error',
-  WARN: 'warn',
-  INFO: 'info'
-};
-
-export default class Logger {
   constructor(name, config = {}) {
     this.name = name;
     
@@ -30,6 +18,7 @@ export default class Logger {
     this.errorBuffer = [];
   }
 
+  // Visi metodai iš antros klasės versijos
   log(message, ...args) {
     this._print('log', message, args);
   }
@@ -114,3 +103,9 @@ export default class Logger {
     }
   }
 }
+
+export const LOG_LEVELS = {
+  ERROR: 'error',
+  WARN: 'warn',
+  INFO: 'info'
+};
