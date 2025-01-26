@@ -1,8 +1,14 @@
 // logger.js
+export default class Logger {
+  constructor(name) {
+    this.name = name
+  }
+}
+
 export const LOG_LEVELS = {
-  LOG: 'log',
+  ERROR: 'error',
   WARN: 'warn',
-  ERROR: 'error'
+  INFO: 'info'
 };
 
 export default class Logger {
