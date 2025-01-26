@@ -1,7 +1,7 @@
 import { TextReader } from './text-reader.js';
 import Logger from './logger.js' // Default export
 import { LOG_LEVELS } from './logger.js' // Named export
-import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js';
+import DOMPurify from './vendor/purify.es.mjs';
 
 class App {
   constructor() {
