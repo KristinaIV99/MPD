@@ -1,5 +1,5 @@
 import { marked } from './vendor/marked.esm.js';
-import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify/dist/purify.es.mjs';
+import DOMPurify from './vendor/purify.es.mjs';
 export class TextReader {
   constructor(config = {}) {
     this.config = {
