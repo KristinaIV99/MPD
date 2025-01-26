@@ -1,5 +1,7 @@
 import { marked } from './vendor/marked.esm.js';
 import DOMPurify from './vendor/purify.es.mjs';
+import Logger from './logger.js';
+
 export class TextReader {
   constructor(config = {}) {
     this.config = {
@@ -9,6 +11,8 @@ export class TextReader {
       encoding: 'utf-8',
       maxRetries: 3,
       sanitizeHTML: true,
+      workerEnabled: true,
+      chunkOverlap: 1024,
       logger: new Logger('TextReader'),
       ...config
     };
@@ -19,7 +23,10 @@ export class TextReader {
     this._workerAvailable = false;
     this.activeJobId = 0;
     this.activeRequests = new Set();
-    this._initWorker();
+    
+    if (this.config.workerEnabled) {
+      this._initWorker();
+    }
   }
 
   async readFile(file) {
@@ -99,7 +106,9 @@ export class TextReader {
   _initWorker() {
     if (typeof Worker !== 'undefined') {
       try {
-        this.worker = new Worker(new URL('./text-reader.worker.js', import.meta.url));
+        this.worker = new Worker('./text-reader.worker.js', {
+          type: 'module'
+        });
         this.worker.onerror = (e) => {
           this.config.logger.error('Worker error:', e.error);
           this._workerAvailable = false;
