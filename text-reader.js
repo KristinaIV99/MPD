@@ -1,40 +1,37 @@
-import { marked } from './vendor/marked.esm.js';
-import DOMPurify from './vendor/purify.es.mjs';
-import Logger from './logger.js';
-import { LOG_LEVELS } from './logger.js';
-
 export class TextReader {
-  constructor(config = {}) {
-    this.config = {
-      chunkSize: 1024 * 1024,
-      maxFileSize: 100 * 1024 * 1024,
-      allowedTypes: [
-        'text/markdown',
-        'text/plain',
-        'application/octet-stream'
-		// Papildomas tipas
-      ],
-      encoding: 'utf-8',
-      maxRetries: 3,
-      sanitizeHTML: true,
-      workerEnabled: true,
-      chunkOverlap: 1024,
-      logger: new Logger('TextReader'),
-      logLevel: LOG_LEVELS.ERROR,
-      ...config
-    };
+ constructor(config = {}) {
+   this.config = {
+     chunkSize: 1024 * 1024,
+     maxFileSize: 100 * 1024 * 1024,
+     allowedTypes: [
+       'text/markdown',
+       'text/plain',
+       'application/octet-stream'
+     ],
+     encoding: 'utf-8',
+     maxRetries: 3,
+     sanitizeHTML: true,
+     workerEnabled: true,
+     chunkOverlap: 1024,
+     logger: new Logger('TextReader'),
+     logLevel: LOG_LEVELS.ERROR,
+     ...config
+   };
 
-    this.abortController = new AbortController();
-    this.events = new EventTarget();
-    this.worker = null;
-    this._workerAvailable = false;
-    this.activeJobId = 0;
-    this.activeRequests = new Set();
-    
-    if (this.config.workerEnabled) {
-      this._initWorker();
-    }
-  }
+   this.DOMPurify = DOMPurify(window);
+   this.config.logger.error('DOMPurify initialized:', this.DOMPurify);
+   
+   this.abortController = new AbortController();
+   this.events = new EventTarget();
+   this.worker = null;
+   this._workerAvailable = false;
+   this.activeJobId = 0;
+   this.activeRequests = new Set();
+   
+   if (this.config.workerEnabled) {
+     this._initWorker();
+   }
+ }
 
   async readFile(file) {
     this._validateFile(file);
