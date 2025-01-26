@@ -2,7 +2,7 @@
     "name": "Mano PWA Programėlė",
     "short_name": "MPD",
     "description": "Programėlė skirta skaityti ir mokytis švedų kalbos",
-    "start_url": "/MPD/index.html",
+    "start_url": "./index.html",
     "id": "/MPD/index.html",
     "display": "standalone",
     "background_color": "#ffffff",
