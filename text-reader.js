@@ -1,3 +1,4 @@
+
 import { marked } from './vendor/marked.esm.js';
 import DOMPurify from './vendor/purify.es.mjs';
 import Logger from './logger.js';
@@ -24,7 +25,7 @@ export class TextReader {
    };
 
    this.purify = DOMPurify;
-   this.config.logger.debug('DOMPurify initialized:', this.DOMPurify);
+   this.config.logger.debug('DOMPurify initialized:', DOMPurify);
    
    this.abortController = new AbortController();
    this.events = new EventTarget();
