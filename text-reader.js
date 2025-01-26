@@ -48,16 +48,24 @@ export class TextReader {
   }
 
   _validateFile(file) {
-    this.config.logger.error(`Failo tipas: ${file.type}`);
-    
-    if (file.size > this.config.maxFileSize) {
-      throw new Error(`Failas viršija ${this.config.maxFileSize/1024/1024}MB ribą`);
-    }
-    
-    if (!this.config.allowedTypes.includes(file.type)) {
-      throw new Error(`Netinkamas failo formatas: ${file.type}. Leidžiami tipai: ${this.config.allowedTypes.join(', ')}`);
-    }
-  }
+	this.config.logger.error(`Failo informacija: 
+     Pavadinimas: ${file.name}
+     Dydis: ${file.size}
+     Tipas: ${file.type}
+     Plėtinys: ${file.name.split('.').pop()}`
+   );
+   
+   if (file.size > this.config.maxFileSize) {
+     throw new Error(`Failas viršija ${this.config.maxFileSize/1024/1024}MB ribą`);
+   }
+   
+ if (!this.config.allowedTypes.includes(file.type)) {
+   if (file.name.toLowerCase().endsWith('.md')) {
+     return;
+   }
+   throw new Error(`Netinkamas failo formatas: ${file.type}. Leidžiami tipai: ${this.config.allowedTypes.join(', ')}`);
+ }
+}
 
   async _readWithProgress(file) {
     const offsets = Array.from(
