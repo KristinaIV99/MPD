@@ -23,7 +23,7 @@ export class TextReader {
      ...config
    };
 
-   this.purify = DOMPurify(window);
+   this.purify = DOMPurify;
    this.config.logger.debug('DOMPurify initialized:', this.DOMPurify);
    
    this.abortController = new AbortController();
