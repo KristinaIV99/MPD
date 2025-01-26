@@ -11,6 +11,7 @@
 	<!-- Manifest and Icons -->
     <link rel="manifest" href="./manifest.json">
     <link rel="stylesheet" href="./main.css">
+	<link rel="icon" href="./favicon.ico" type="image/x-icon">
 
     <!-- iOS palaikymas -->
     <link rel="apple-touch-icon" href="./icons/icon-192x192.png">
@@ -23,9 +24,9 @@
         <div id="content"></div>
     </div>
 
-    <script src="./logger.js"></script>
-    <script src="./text-reader.js"></script>
-    <script src="./main.js"></script>
+    <script type="module" src="./logger.js"></script>
+    <script type="module" src="./text-reader.js"></script>
+    <script type="module" src="./main.js"></script>
     <script>
         // Service Worker registracija
         if ('serviceWorker' in navigator) {
