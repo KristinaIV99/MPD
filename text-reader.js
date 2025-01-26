@@ -11,7 +11,8 @@ export class TextReader {
       allowedTypes: [
         'text/markdown',
         'text/plain',
-        'application/octet-stream' // Papildomas tipas
+        'application/octet-stream'
+		// Papildomas tipas
       ],
       encoding: 'utf-8',
       maxRetries: 3,
@@ -47,6 +48,8 @@ export class TextReader {
   }
 
   _validateFile(file) {
+    this.config.logger.info('Failo tipas:', file.type);
+    
     if (file.size > this.config.maxFileSize) {
       throw new Error(`Failas viršija ${this.config.maxFileSize/1024/1024}MB ribą`);
     }
