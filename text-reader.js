@@ -1,6 +1,7 @@
 import { marked } from './vendor/marked.esm.js';
 import DOMPurify from './vendor/purify.es.mjs';
 import Logger from './logger.js';
+import { LOG_LEVELS } from './logger.js';
 
 export class TextReader {
   constructor(config = {}) {
@@ -14,6 +15,7 @@ export class TextReader {
       workerEnabled: true,
       chunkOverlap: 1024,
       logger: new Logger('TextReader'),
+      logLevel: LOG_LEVELS.ERROR,
       ...config
     };
 
@@ -80,19 +82,22 @@ export class TextReader {
     return new Promise((resolve, reject) => {
       if (this.abortController.signal.aborted) {
         reject(new DOMException('Operation aborted', 'AbortError'));
+        return;
       }
 
       const reader = new FileReader();
-      const slice = file.slice(offset, offset + this.config.chunkSize);
+      const slice = file.slice(offset, offset + this.config.chunkSize + this.config.chunkOverlap);
 
       reader.onload = () => resolve(reader.result);
       reader.onerror = () => reject(reader.error);
+      reader.onabort = () => reject(new DOMException('Operation aborted', 'AbortError'));
       
-      this.abortController.signal.addEventListener('abort', () => {
+      const abortHandler = () => {
         reader.abort();
         reject(new DOMException('Operation aborted', 'AbortError'));
-      });
+      };
 
+      this.abortController.signal.addEventListener('abort', abortHandler, { once: true });
       reader.readAsText(slice, this.config.encoding);
     });
   }
@@ -106,9 +111,7 @@ export class TextReader {
   _initWorker() {
     if (typeof Worker !== 'undefined') {
       try {
-        this.worker = new Worker('./text-reader.worker.js', {
-          type: 'module'
-        });
+        this.worker = new Worker('./text-reader.worker.js', { type: 'module' });
         this.worker.onerror = (e) => {
           this.config.logger.error('Worker error:', e.error);
           this._workerAvailable = false;
@@ -144,11 +147,11 @@ export class TextReader {
         reject(new DOMException('Operation aborted', 'AbortError'));
       };
 
-      this.abortController.signal.addEventListener('abort', abortHandler);
+      this.abortController.signal.addEventListener('abort', abortHandler, { once: true });
       this.worker.addEventListener('message', messageHandler);
       
       this.worker.postMessage({
-        text: text.slice(0, 10 * 1024 * 1024), // 10MB limit
+        text: text, // Siunčiamas VISAS tekstas
         jobId,
         sanitize: this.config.sanitizeHTML
       });
@@ -187,7 +190,7 @@ export class TextReader {
 
   abort() {
     this.activeRequests.forEach(jobId => {
-      this.worker.postMessage({ type: 'cancel', jobId });
+      this.worker?.postMessage({ type: 'cancel', jobId });
     });
     this.activeRequests.clear();
     
