@@ -7,9 +7,10 @@ export default class Logger {
       colors: {
         log: '#2196F3',
         warn: '#FF9800',
-        error: '#F44336'
+        error: '#F44336',
+		debug: '#4CAF50'
       },
-      saveLevels: ['error'],
+      saveLevels: ['error', 'debug'],
       maxStoredErrors: 100,
       bufferSize: 10,
       ...config
@@ -30,6 +31,10 @@ export default class Logger {
   error(message, ...args) {
     const stack = new Error().stack.split('\n').slice(2).join('\n');
     this._print('error', `${message}\nStack: ${stack}`, args);
+  }
+
+  debug(message, ...args) {
+    this._print('debug', message, args);
   }
 
   _print(level, message, args) {
