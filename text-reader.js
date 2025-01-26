@@ -48,7 +48,8 @@ export class TextReader {
   }
 
   _validateFile(file) {
-	this.config.logger.error(`Failo informacija: 
+   this.config.logger.error('DOMPurify loaded:', DOMPurify);
+   this.config.logger.error(`Failo informacija: 
      Pavadinimas: ${file.name}
      Dydis: ${file.size}
      Tipas: ${file.type}
