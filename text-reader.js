@@ -1,6 +1,6 @@
 
 import { marked } from './vendor/marked.esm.js';
-import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js';
+import DOMPurify from './vendor/purify.es.mjs';
 import Logger from './logger.js';
 import { LOG_LEVELS } from './logger.js';
 
