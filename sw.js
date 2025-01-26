@@ -3,10 +3,10 @@ const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './styles/main.css',
-  './src/logger.js',
-  './src/text-reader.js',
-  './src/main.js',
+  './main.css',
+  './logger.js',
+  './text-reader.js',
+  './main.js',
   './icons/icon-192x192.png',
   './icons/icon-512x512.png'
 ];
