@@ -4,15 +4,16 @@ const STATIC_ASSETS = [
   './index.html',
   './manifest.json',
   './main.css',
-  './logger.js',
   './text-reader.js',
   './main.js',
   './icons/icon-192x192.png',
   './icons/icon-512x512.png'
 ];
 
+const SW_NAME = '[ServiceWorker]';
+
 const handleError = (error) => {
-  console.error('SW Error:', error);
+  console.error(`${SW_NAME} Error:`, error);
   return new Response('Offline content not available', {
     status: 404,
     headers: { 'Content-Type': 'text/plain' }
@@ -20,21 +21,32 @@ const handleError = (error) => {
 };
 
 self.addEventListener('install', (e) => {
+  console.debug(`${SW_NAME} Installing service worker...`);
   e.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then((cache) => {
+        console.debug(`${SW_NAME} Caching static assets...`);
+        return cache.addAll(STATIC_ASSETS);
+      })
       .catch(handleError)
   );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (e) => {
+  console.debug(`${SW_NAME} Activating service worker...`);
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(
-        keys.filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      ))
+      .then((keys) => {
+        console.debug(`${SW_NAME} Found caches:`, keys);
+        return Promise.all(
+          keys.filter((key) => key !== CACHE_NAME)
+            .map((key) => {
+              console.debug(`${SW_NAME} Deleting old cache:`, key);
+              return caches.delete(key);
+            })
+        );
+      })
       .then(() => self.clients.claim())
       .catch(handleError)
   );
@@ -43,6 +55,7 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   // API užklausos
   if (e.request.url.includes('/api/')) {
+    console.debug(`${SW_NAME} Handling API request:`, e.request.url);
     e.respondWith(
       caches.match(e.request).then((cached) => {
         const fetchPromise = fetch(e.request)
@@ -51,12 +64,11 @@ self.addEventListener('fetch', (e) => {
               const clone = response.clone();
               caches.open(CACHE_NAME)
                 .then((cache) => cache.put(e.request, clone))
-                .catch((err) => console.error('Cache put error:', err));
+                .catch((err) => console.error(`${SW_NAME} Cache put error:`, err));
             }
             return response;
           })
           .catch(() => cached || handleError(new Error('API unreachable')));
-
         return cached || fetchPromise;
       })
     );
@@ -64,6 +76,7 @@ self.addEventListener('fetch', (e) => {
   
   // .md failai
   else if (e.request.url.endsWith('.md')) {
+    console.debug(`${SW_NAME} Handling MD file request:`, e.request.url);
     e.respondWith(
       caches.match(e.request)
         .then((response) => response || fetch(e.request))
@@ -79,6 +92,7 @@ self.addEventListener('fetch', (e) => {
   
   // Statiniai resursai
   else {
+    console.debug(`${SW_NAME} Handling static asset request:`, e.request.url);
     e.respondWith(
       caches.match(e.request)
         .then((response) => response || fetch(e.request))
