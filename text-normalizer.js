@@ -11,23 +11,23 @@ class TextNormalizer {  // <--- PRIDĖTI KLĖS DEKLARACIJĄ
     });
   }
     
-    this.patterns = {
-      emphasis: [/_([^_]+?)_/g, /(?<!\*)\*(?!\*)([^*]+?)\*(?!\*)/g],
-      strong: [/__([^_]+?)__/g, /\*\*([^*]+?)\*\*/g],
-      headers: /^(#{1,6})\s*(.+)$/gm,
-      lists: /^[\s-]*[-+*]\s+/gm,
-      blockquotes: /^>\s*(.+)$/gm,
-      horizontalRules: /^(?:[-*_]\s*){3,}$/gm,
-      codeBlocks: /```([\s\S]*?)```/g,  // Patobulintas kodo blokų aptikimas
-      inlineCode: /`([^`]+)`/g,
-      enDash: /–/g,
-      quotes: /["']/g,  // Sutvarkytas kabučių regex
-	  strongEmphasis: [/\*\*\*([^*]+?)\*\*\*/g],
-      chapterTitle: /^#\s(.+)$/m,  // Skyriaus pavadinimui
-      emptyLines: /\n\s*\n/g,       // Tuščioms eilutėms
-      paragraphs: /([^\n])\n([^\n])/g       // Paragrafams
-    };
-  }
+  this.patterns = {
+    emphasis: [/_([^_]+?)_/g, /(?<!\*)\*(?!\*)([^*]+?)\*(?!\*)/g],
+    strong: [/__([^_]+?)__/g, /\*\*([^*]+?)\*\*/g],
+    headers: /^(#{1,6})\s*(.+)$/gm,
+    lists: /^[\s-]*[-+*]\s+/gm,
+    blockquotes: /^>\s*(.+)$/gm,
+    horizontalRules: /^(?:[-*_]\s*){3,}$/gm,
+    codeBlocks: /```([\s\S]*?)```/g,  // Patobulintas kodo blokų aptikimas
+    inlineCode: /`([^`]+)`/g,
+    enDash: /–/g,
+    quotes: /["']/g,  // Sutvarkytas kabučių regex
+	strongEmphasis: [/\*\*\*([^*]+?)\*\*\*/g],
+    chapterTitle: /^#\s(.+)$/m,  // Skyriaus pavadinimui
+    emptyLines: /\n\s*\n/g,       // Tuščioms eilutėms
+    paragraphs: /([^\n])\n([^\n])/g       // Paragrafams
+  };
+}
 
   normalizeMarkdown(text) {
       try {
