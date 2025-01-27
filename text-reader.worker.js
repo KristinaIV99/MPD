@@ -1,21 +1,33 @@
-
 // text-reader.worker.js
 import { marked } from './vendor/marked.esm.js';
 import purify from './vendor/purify.es.mjs';
-const DOMPurify = purify(self);
+import Logger from './logger.js';
 
+const DOMPurify = purify(self);
+const logger = Logger('Worker');
 const activeJobs = new Map();
+logger.debug('purify importuotas:', purify);
+logger.debug('DOMPurify inicializuotas:', DOMPurify);
 
 async function processMarkdown(text, sanitize) {
-    try {
-        const html = await marked.parse(text);
-        return sanitize ? DOMPurify.sanitize(html, {
-            FORBID_TAGS: ['iframe', 'script'], // Pridėta konfigūracija
-            FORBID_ATTR: ['onclick']
-        }) : html;
-    } catch (error) {
-        throw new Error(`Markdown konvertavimo klaida: ${error.message}`);
-    }
+   try {
+       logger.debug('Pradedamas markdown apdorojimas');
+       const html = await marked.parse(text);
+       logger.debug('Markdown konvertuotas į HTML');
+       
+       if (sanitize) {
+           logger.debug('Pradedama HTML sanitizacija');
+       }
+       
+       return sanitize ? DOMPurify.sanitize(html, {
+           FORBID_TAGS: ['iframe', 'script'],
+           FORBID_ATTR: ['onclick']
+       }) : html;
+       
+   } catch (error) {
+       logger.error('Markdown klaida:', error);
+       throw new Error(`Markdown konvertavimo klaida: ${error.message}`);
+   }
 }
 
 self.addEventListener('message', async (e) => {
