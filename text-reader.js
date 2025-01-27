@@ -147,37 +147,48 @@ export class TextReader {
   }
 
   _parseWithWorker(text) {
-    return new Promise((resolve, reject) => {
-      const jobId = ++this.activeJobId;
-      this.activeRequests.add(jobId);
-
-      const messageHandler = (e) => {
-        if (e.data.jobId !== jobId) return;
-        
-        this.worker.removeEventListener('message', messageHandler);
-        this.activeRequests.delete(jobId);
-
-        if (e.data.error) {
-          reject(new Error(e.data.error));
-        } else {
-          resolve(this._sanitizeOutput(e.data.html));
-        }
-      };
-
-      const abortHandler = () => {
-        this.worker.postMessage({ type: 'cancel', jobId });
-        reject(new DOMException('Operation aborted', 'AbortError'));
-      };
-
-      this.abortController.signal.addEventListener('abort', abortHandler, { once: true });
-      this.worker.addEventListener('message', messageHandler);
-      
-      this.worker.postMessage({
-        text: text, // Siunčiamas VISAS tekstas
-        jobId,
-        sanitize: this.config.sanitizeHTML
-      });
-    });
+	 this.config.logger.debug('Pradedamas worker apdorojimas');
+     return new Promise((resolve, reject) => {
+         const jobId = ++this.activeJobId;
+         this.activeRequests.add(jobId);
+         this.config.logger.debug(`Sukurtas naujas job ID: ${jobId}`);
+  
+         const messageHandler = (e) => {
+             if (e.data.jobId !== jobId) {
+                 this.config.logger.debug(`Praleistas neatitinkantis job ID: ${e.data.jobId}`);
+                 return;
+             }
+             
+             this.config.logger.debug(`Gautas atsakymas iš worker, job ID: ${jobId}`);
+             this.worker.removeEventListener('message', messageHandler);
+             this.activeRequests.delete(jobId);
+             this.config.logger.debug(`Pašalintas job ID: ${jobId} iš aktyvių užklausų`);
+  
+             if (e.data.error) {
+                 this.config.logger.error(`Worker klaida: ${e.data.error}`);
+                 reject(new Error(e.data.error));
+             } else {
+                 this.config.logger.debug('Pradedamas HTML sanitizavimas');
+                 resolve(this._sanitizeOutput(e.data.html));
+             }
+         };
+  
+         const abortHandler = () => {
+             this.config.logger.warn(`Nutraukiama užklausa job ID: ${jobId}`);
+             this.worker.postMessage({ type: 'cancel', jobId });
+             reject(new DOMException('Operation aborted', 'AbortError'));
+         };
+  
+         this.abortController.signal.addEventListener('abort', abortHandler, { once: true });
+         this.worker.addEventListener('message', messageHandler);
+         
+         this.config.logger.debug(`Siunčiama užklausa į worker, job ID: ${jobId}`);
+         this.worker.postMessage({
+             text: text,
+             jobId,
+             sanitize: this.config.sanitizeHTML
+         });
+     });
   }
 
   _sanitizeOutput(html) {
