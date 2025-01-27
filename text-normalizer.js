@@ -26,58 +26,61 @@ export class TextNormalizer {
     };
   }
 
-  normalizeMarkdown(text) {
+normalizeMarkdown(text) {
     try {
-      this.logger.debug('Starting markdown normalization');
-      let normalized = text;
-      
-      normalized = this.handleHeaders(normalized);
-      this.logger.debug('Headers processed');
-      
-      normalized = this.handleParagraphsAndSpacing(normalized);
-      this.logger.debug('Paragraphs and spacing processed');
-      
-      normalized = this.processBasicElements(normalized);
-      this.logger.debug('Basic elements processed');
-      
-      normalized = this.normalizeQuotes(normalized);
-      this.logger.debug('Quotes normalized');
-      
-      normalized = this.normalizeCodeBlocks(normalized);
-      this.logger.debug('Code blocks normalized');
-      
-      normalized = this.handleEmphasis(normalized);
-      this.logger.debug('Emphasis handled');
-      
-      normalized = this.handleSpecialSymbols(normalized);
-      this.logger.debug('Special symbols handled');
-      
-      this.logger.info('Markdown normalized successfully');
-      return normalized;
+        this.logger.debug('Starting markdown normalization');
+        let normalized = text;
+        
+        // Pirmiausia tvarkome emphasis ir strong formatavimą
+        normalized = this.handleEmphasis(normalized);
+        this.logger.debug('Emphasis handled');
+        
+        // Tada antraštes
+        normalized = this.handleHeaders(normalized);
+        this.logger.debug('Headers processed');
+        
+        // Tada paragrafus ir tarpus
+        normalized = this.handleParagraphsAndSpacing(normalized);
+        this.logger.debug('Paragraphs and spacing processed');
+        
+        // Tada likusius elementus
+        normalized = this.processBasicElements(normalized);
+        normalized = this.normalizeQuotes(normalized);
+        normalized = this.normalizeCodeBlocks(normalized);
+        normalized = this.handleSpecialSymbols(normalized);
+        
+        this.logger.debug('Markdown normalized successfully');
+        return normalized;
     } catch (error) {
-      this.logger.error('Normalization failed:', error);
-      return text;
+        this.logger.error('Normalization failed:', error);
+        return text;
     }
-  }
+}
 
-  handleHeaders(text) {
+handleHeaders(text) {
     this.logger.debug('Processing headers');
-    return text.replace(/^(#+)\s*(.+?)$/gm, (match, hashes, content) => {
-      return `${hashes} ${content}\n\n`;
-    });
-  }
+    return text.replace(/^#\s*\*\*\*(.*?)\*\*\*/gm, '# $1')  // Pašalina žvaigždutes iš antraščių
+        .replace(/^(#+)\s*(.+?)$/gm, (match, hashes, content) => {
+            return `${hashes} ${content}\n\n`;  // Prideda tuščias eilutes po antraščių
+        });
+}
 
-  handleParagraphsAndSpacing(text) {
+handleParagraphsAndSpacing(text) {
     this.logger.debug('Processing paragraphs and spacing');
     return text
-      .split(/\n/)
-      .map(line => line.trim())
-      .join('\n\n')
-      .replace(/\n{3,}/g, '\n\n')
-      .replace(/([^\n])\n(#+\s)/g, '$1\n\n$2')
-      .replace(/(#+\s.*)\n([^\n])/g, '$1\n\n$2')
-      .trim();
-  }
+        // Pirmiausia sutvarkom tuščias eilutes
+        .replace(/\n{3,}/g, '\n\n')
+        // Tada tvarkom paragrafus
+        .split(/\n/)
+        .map(line => line.trim())
+        .join('\n')
+        // Pridedame tuščias eilutes po paragrafų
+        .replace(/([^\n])\n(?=[^\n])/g, '$1\n\n')
+        // Sutvarkom tarpus aplink antraštes
+        .replace(/([^\n])\n(#+\s)/g, '$1\n\n$2')
+        .replace(/(#+\s.*)\n([^\n])/g, '$1\n\n$2')
+        .trim();
+}
 
   processBasicElements(text) {
     this.logger.debug('Processing basic elements');
@@ -126,4 +129,3 @@ export class TextNormalizer {
     return result;
   }
 }
-
