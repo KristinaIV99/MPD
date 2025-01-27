@@ -1,6 +1,6 @@
 import Logger from './logger.js';
-import { TextNormalizer } from './text-normalizer.js';
-import { TextReader } from './text-reader.js';
+import TextNormalizer from './text-normalizer.js';
+import TextReader from './text-reader.js';
 
 const logger = new Logger('Main');
 const normalizer = new TextNormalizer(logger);
