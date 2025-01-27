@@ -1,3 +1,4 @@
+
 export class TextNormalizer {
   constructor(logger) {
     this.logger = logger;
@@ -12,13 +13,17 @@ export class TextNormalizer {
       inlineCode: /`([^`]+)`/g,
 	  enDash: /–/g,    // Trumpesnis brūkšnys (en dash)
       quotes: /[""'']/g, // Įvairūs kabutės
-	  mixedFormatting: /[*_]{1,3}(.+?)[*_]{1,3}/g
+      longDash: /\*\*\*/g,  // Naujas šablonas trims žvaigždutėms
+	  mixedFormatting: /\*[_]{2}(.+?)[_]{2}\*/g
     };
   }
   
   normalizeMarkdown(text) {
     try {
       let normalized = text;
+      
+      // Pirma apdorojame tris žvaigždutes į ilgą brūkšnį
+      normalized = normalized.replace(this.patterns.longDash, '—');
       
       // 1. Horizontalios linijos (su patterns)
       normalized = normalized.replace(this.patterns.horizontalRules, '---');
@@ -73,18 +78,9 @@ export class TextNormalizer {
   handleEmphasis(text) {
     let result = text;
     
-    // Pirma tvarkome kombinuotą formatavimą
+    // Tvarkome kombinuotą formatavimą *__text__*
     result = result.replace(this.patterns.mixedFormatting, (match, content) => {
-      const hasStrong = match.includes('__') || match.includes('**');
-      const hasEmphasis = match.includes('_') || match.includes('*');
-      
-      if (hasStrong && hasEmphasis) {
-        return `**_${content}_**`;  // Standartizuojame į **_turinys_**
-      } else if (hasStrong) {
-        return `**${content}**`;
-      } else {
-        return `_${content}_`;
-      }
+      return `_${content}_`; // Paverčiame į žemą brūkšnį
     });
     
     // Tada tvarkome paprastą formatavimą
