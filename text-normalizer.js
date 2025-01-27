@@ -1,101 +1,79 @@
-import Logger from './logger.js';
-import { LOG_LEVELS } from './logger.js';
-
-class TextNormalizer {  // <--- PRIDĖTI KLĖS DEKLARACIJĄ
-  constructor(logger) {
-    // Jei logger neperduotas, sukuriame naują
-    this.logger = logger || new Logger('TextNormalizer', {
-      saveLevels: ['error', 'debug'],
-      bufferSize: 1,  // Sumažinkite buferį iki 1, kad iš karto matytumėte
-      logToConsole: true  // PRIDĖKITE, jei Logger klasėje trūksta šito
-    });
-  }
+class TextNormalizer {
+  constructor() {
+    this.NORMALIZER_NAME = '[TextNormalizer]';
     
-  this.patterns = {
-    emphasis: [/_([^_]+?)_/g, /(?<!\*)\*(?!\*)([^*]+?)\*(?!\*)/g],
-    strong: [/__([^_]+?)__/g, /\*\*([^*]+?)\*\*/g],
-    headers: /^(#{1,6})\s*(.+)$/gm,
-    lists: /^[\s-]*[-+*]\s+/gm,
-    blockquotes: /^>\s*(.+)$/gm,
-    horizontalRules: /^(?:[-*_]\s*){3,}$/gm,
-    codeBlocks: /```([\s\S]*?)```/g,  // Patobulintas kodo blokų aptikimas
-    inlineCode: /`([^`]+)`/g,
-    enDash: /–/g,
-    quotes: /["']/g,  // Sutvarkytas kabučių regex
-	strongEmphasis: [/\*\*\*([^*]+?)\*\*\*/g],
-    chapterTitle: /^#\s(.+)$/m,  // Skyriaus pavadinimui
-    emptyLines: /\n\s*\n/g,       // Tuščioms eilutėms
-    paragraphs: /([^\n])\n([^\n])/g       // Paragrafams
-  };
-}
+    this.patterns = {
+      emphasis: [/_([^_]+?)_/g, /(?<!\*)\*(?!\*)([^*]+?)\*(?!\*)/g],
+      strong: [/__([^_]+?)__/g, /\*\*([^*]+?)\*\*/g],
+      headers: /^(#{1,6})\s*(.+)$/gm,
+      lists: /^[\s-]*[-+*]\s+/gm,
+      blockquotes: /^>\s*(.+)$/gm,
+      horizontalRules: /^(?:[-*_]\s*){3,}$/gm,
+      codeBlocks: /```([\s\S]*?)```/g,
+      inlineCode: /`([^`]+)`/g,
+      enDash: /–/g,
+      quotes: /["']/g,
+      strongEmphasis: [/\*\*\*([^*]+?)\*\*\*/g],
+      chapterTitle: /^#\s(.+)$/m,
+      emptyLines: /\n\s*\n/g,
+      paragraphs: /([^\n])\n([^\n])/g
+    };
+  }
 
   normalizeMarkdown(text) {
-      try {
-          this.logger.debug(`=== normalizeMarkdown START ===\nOriginal text: ${text}`);
-          
-
-		  let normalized = text;
-          // Pirmiausia tvarkome emphasis ir strong formatavimą
-          normalized = this.handleEmphasis(normalized);
-          
-          // Tada antraštes
-          normalized = this.handleHeaders(normalized);
-          
-          // Tada paragrafus ir tarpus
-          normalized = this.handleParagraphsAndSpacing(normalized);
-          
-          // Tada likusius elementus
-          normalized = this.processBasicElements(normalized);
-          normalized = this.normalizeQuotes(normalized);
-          normalized = this.normalizeCodeBlocks(normalized);
-          normalized = this.handleSpecialSymbols(normalized);
-          
-          this.logger.debug(`=== normalizeMarkdown END ===\nFinal text: ${normalized}`);
-          return normalized;
-      } catch (error) {
-          this.logger.error(`Normalization failed: ${error.message}`);
-          throw error;
-      }
+    try {
+      console.debug(`${this.NORMALIZER_NAME} === normalizeMarkdown START ===\nOriginal text: ${text}`);
+      
+      let normalized = text;
+      normalized = this.handleEmphasis(normalized);
+      normalized = this.handleHeaders(normalized);
+      normalized = this.handleParagraphsAndSpacing(normalized);
+      normalized = this.processBasicElements(normalized);
+      normalized = this.normalizeQuotes(normalized);
+      normalized = this.normalizeCodeBlocks(normalized);
+      normalized = this.handleSpecialSymbols(normalized);
+      
+      console.debug(`${this.NORMALIZER_NAME} === normalizeMarkdown END ===\nFinal text: ${normalized}`);
+      return normalized;
+    } catch (error) {
+      console.error(`${this.NORMALIZER_NAME} Normalization failed: ${error.message}`);
+      throw error;
+    }
   }
 
   handleHeaders(text) {
-      this.logger.debug(`=== handleHeaders START ===\nInput text: ${text}`);
-      
-      // Pašalina ___ iš antraščių ir prideda tuščią eilutę
-      const result = text
-          .replace(/^#\s*_{3}(.+?)_{3}/gm, '# $1\n\n')
-          .replace(/^(#+)\s*(.+?)$/gm, '$1 $2\n\n');
-      
-      this.logger.debug(`=== handleHeaders END ===\nOutput text: ${result}`);
-      return result;
+    console.debug(`${this.NORMALIZER_NAME} === handleHeaders START ===\nInput text: ${text}`);
+    
+    const result = text
+      .replace(/^#\s*_{3}(.+?)_{3}/gm, '# $1\n\n')
+      .replace(/^(#+)\s*(.+?)$/gm, '$1 $2\n\n');
+    
+    console.debug(`${this.NORMALIZER_NAME} === handleHeaders END ===\nOutput text: ${result}`);
+    return result;
   }
   
   handleParagraphsAndSpacing(text) {
-      this.logger.debug(`=== handleParagraphsAndSpacing START ===\nInput text: ${text}`);
-      
-      // Tvarko paragrafus ir tarpus
-      const result = text
-          // Prideda tuščią eilutę po citatos
-          .replace(/^>\s*(.+)$/gm, '> $1\n\n')
-          // Prideda tuščią eilutę tarp paragrafų
-          .replace(/([^\n])\n(?=[^\n])/g, '$1\n\n')
-          // Pašalina perteklinius tarpus
-          .replace(/\n{3,}/g, '\n\n')
-          .trim();
-      
-      this.logger.debug(`=== handleParagraphsAndSpacing END ===\nOutput text: ${result}`);
-      return result;
+    console.debug(`${this.NORMALIZER_NAME} === handleParagraphsAndSpacing START ===\nInput text: ${text}`);
+    
+    const result = text
+      .replace(/^>\s*(.+)$/gm, '> $1\n\n')
+      .replace(/([^\n])\n(?=[^\n])/g, '$1\n\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+    
+    console.debug(`${this.NORMALIZER_NAME} === handleParagraphsAndSpacing END ===\nOutput text: ${result}`);
+    return result;
   }
 
   processBasicElements(text) {
-    this.logger.debug('Processing basic elements');
+    console.debug(`${this.NORMALIZER_NAME} Processing basic elements`);
     return text
       .replace(this.patterns.lists, '* ')
       .replace(this.patterns.horizontalRules, '—');
   }
 
   handleSpecialSymbols(text) {
-    this.logger.debug('Processing special symbols');
+    console.debug(`${this.NORMALIZER_NAME} Processing special symbols`);
     return text
       .replace(this.patterns.quotes, '"')
       .replace(this.patterns.enDash, '-')
@@ -103,7 +81,7 @@ class TextNormalizer {  // <--- PRIDĖTI KLĖS DEKLARACIJĄ
   }
 
   normalizeQuotes(text) {
-    this.logger.debug('Normalizing quotes');
+    console.debug(`${this.NORMALIZER_NAME} Normalizing quotes`);
     return text
       .replace(/^(\s*)&/gm, '>')
       .replace(/^>+/gm, '>')
@@ -111,14 +89,14 @@ class TextNormalizer {  // <--- PRIDĖTI KLĖS DEKLARACIJĄ
   }
 
   normalizeCodeBlocks(text) {
-    this.logger.debug('Normalizing code blocks');
+    console.debug(`${this.NORMALIZER_NAME} Normalizing code blocks`);
     return text
       .replace(this.patterns.codeBlocks, (_, code) => `\n\n\`\`\`\n${code.trim()}\n\`\`\`\n\n`)
       .replace(this.patterns.inlineCode, '`$1`');
   }
 
   handleEmphasis(text) {
-    this.logger.debug('Processing emphasis');
+    console.debug(`${this.NORMALIZER_NAME} Processing emphasis`);
     let result = text;
     
     result = result.replace(this.patterns.strongEmphasis, '___$1___');
