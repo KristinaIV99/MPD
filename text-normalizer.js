@@ -1,4 +1,5 @@
 
+
 import Logger from './logger.js';
 import { LOG_LEVELS } from './logger.js';
 
@@ -59,26 +60,21 @@ normalizeMarkdown(text) {
 
 handleHeaders(text) {
     this.logger.debug('Processing headers');
-    return text.replace(/^#\s*\*\*\*(.*?)\*\*\*/gm, '# $1')  // Pašalina žvaigždutes iš antraščių
-        .replace(/^(#+)\s*(.+?)$/gm, (match, hashes, content) => {
-            return `${hashes} ${content}\n\n`;  // Prideda tuščias eilutes po antraščių
-        });
+    // Pašalina ___ iš antraščių ir prideda tuščią eilutę
+    return text
+        .replace(/^#\s*_{3}(.+?)_{3}/gm, '# $1\n\n')
+        .replace(/^(#+)\s*(.+?)$/gm, '$1 $2\n\n');
 }
 
 handleParagraphsAndSpacing(text) {
     this.logger.debug('Processing paragraphs and spacing');
     return text
-        // Pirmiausia sutvarkom tuščias eilutes
-        .replace(/\n{3,}/g, '\n\n')
-        // Tada tvarkom paragrafus
-        .split(/\n/)
-        .map(line => line.trim())
-        .join('\n')
-        // Pridedame tuščias eilutes po paragrafų
+        // Prideda tuščią eilutę po citatos
+        .replace(/^>\s*(.+)$/gm, '> $1\n\n')
+        // Prideda tuščią eilutę tarp paragrafų
         .replace(/([^\n])\n(?=[^\n])/g, '$1\n\n')
-        // Sutvarkom tarpus aplink antraštes
-        .replace(/([^\n])\n(#+\s)/g, '$1\n\n$2')
-        .replace(/(#+\s.*)\n([^\n])/g, '$1\n\n$2')
+        // Pašalina perteklinius tarpus
+        .replace(/\n{3,}/g, '\n\n')
         .trim();
 }
 
