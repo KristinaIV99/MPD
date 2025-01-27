@@ -6,7 +6,7 @@ class App {
   constructor() {
     this.APP_NAME = '[App]';
     this.reader = new TextReader();
-	this.counter = new WordCounter();
+    this.counter = new WordCounter();
     
     console.log(`${this.APP_NAME} Konstruktorius inicializuotas`);
     this.initUI();
@@ -17,12 +17,12 @@ class App {
   initUI() {
     this.fileInput = document.getElementById('fileInput');
     this.content = document.getElementById('content');
-	this.wordCount = document.createElement('div');
+    this.wordCount = document.createElement('div');
     this.wordCount.className = 'word-count';
     this.progressBar = document.createElement('div');
     this.progressBar.className = 'progress-bar';
     document.body.prepend(this.progressBar);
-	document.body.prepend(this.wordCount);
+    document.body.prepend(this.wordCount);
     console.log(`${this.APP_NAME} UI elementai inicializuoti`);
   }
 
@@ -42,16 +42,23 @@ class App {
       this.isProcessing = true;
       this.fileInput.disabled = true;
       this.showLoadingState();
-
       const file = e.target.files[0];
       if(!file) {
         console.warn(`${this.APP_NAME} Nepasirinktas failas`);
         return;
       }
-
       console.log(`${this.APP_NAME} Apdorojamas failas: ${file.name}`);
       const text = await this.reader.readFile(file);
       console.log(`${this.APP_NAME} Failas sėkmingai nuskaitytas`);
+      
+      // Skaičiuojame žodžius
+      console.log(`${this.APP_NAME} Pradedamas žodžių skaičiavimas`);
+      const wordCount = this.counter.countWords(text);
+      console.log(`${this.APP_NAME} Žodžių suskaičiuota:`, wordCount);
+      
+      // Atnaujiname žodžių skaičių UI
+      this.updateWordCount(wordCount);
+      
       this.setContent(text);
       console.log(`${this.APP_NAME} Teksto turinys sėkmingai įkeltas`);
     } catch(error) {
@@ -66,8 +73,8 @@ class App {
     }
   }
 
-  // Naujas metodas žodžių skaičiaus atvaizdavimui
   updateWordCount(count) {
+    console.log(`${this.APP_NAME} Atnaujinamas žodžių skaičius:`, count);
     this.wordCount.textContent = `Žodžių skaičius: ${count}`;
   }
 
