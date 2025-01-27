@@ -1,12 +1,14 @@
+
 import Logger from './logger.js';
 import { LOG_LEVELS } from './logger.js';
 
-export class TextNormalizer {
-  constructor(logger) {
-    this.logger = logger || new Logger({
-      level: LOG_LEVELS.INFO,
-      prefix: 'TextNormalizer'
+constructor(logger) {
+    // Jei logger neperduotas, sukuriame naują
+    this.logger = logger || new Logger('TextNormalizer', {
+        saveLevels: ['error', 'debug'],
+        bufferSize: 10
     });
+    
     this.patterns = {
       emphasis: [/_([^_]+?)_/g, /(?<!\*)\*(?!\*)([^*]+?)\*(?!\*)/g],
       strong: [/__([^_]+?)__/g, /\*\*([^*]+?)\*\*/g],
@@ -27,8 +29,7 @@ export class TextNormalizer {
 
   normalizeMarkdown(text) {
       try {
-          this.logger.debug('=== normalizeMarkdown START ===');
-          this.logger.debug('Original text:', text);
+          this.logger.debug(`=== normalizeMarkdown START ===\nOriginal text: ${text}`);
           
 
 		  let normalized = text;
@@ -47,32 +48,28 @@ export class TextNormalizer {
           normalized = this.normalizeCodeBlocks(normalized);
           normalized = this.handleSpecialSymbols(normalized);
           
-          this.logger.debug('Final text:', normalized);
-          this.logger.debug('=== normalizeMarkdown END ===');
+          this.logger.debug(`=== normalizeMarkdown END ===\nFinal text: ${normalized}`);
           return normalized;
       } catch (error) {
-          this.logger.error('Normalization failed:', error);
+          this.logger.error(`Normalization failed: ${error.message}`);
           throw error;
       }
   }
 
   handleHeaders(text) {
-      this.logger.debug('=== handleHeaders START ===');
-      this.logger.debug('Input text:', text);
+      this.logger.debug(`=== handleHeaders START ===\nInput text: ${text}`);
       
       // Pašalina ___ iš antraščių ir prideda tuščią eilutę
       const result = text
           .replace(/^#\s*_{3}(.+?)_{3}/gm, '# $1\n\n')
           .replace(/^(#+)\s*(.+?)$/gm, '$1 $2\n\n');
       
-      this.logger.debug('Output text:', result);
-      this.logger.debug('=== handleHeaders END ===');
+      this.logger.debug(`=== handleHeaders END ===\nOutput text: ${result}`);
       return result;
   }
   
   handleParagraphsAndSpacing(text) {
-      this.logger.debug('=== handleParagraphsAndSpacing START ===');
-      this.logger.debug('Input text:', text);
+      this.logger.debug(`=== handleParagraphsAndSpacing START ===\nInput text: ${text}`);
       
       // Tvarko paragrafus ir tarpus
       const result = text
@@ -84,8 +81,7 @@ export class TextNormalizer {
           .replace(/\n{3,}/g, '\n\n')
           .trim();
       
-      this.logger.debug('Output text:', result);
-      this.logger.debug('=== handleParagraphsAndSpacing END ===');
+      this.logger.debug(`=== handleParagraphsAndSpacing END ===\nOutput text: ${result}`);
       return result;
   }
 
