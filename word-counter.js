@@ -1,16 +1,18 @@
 // word-counter.js
-
 export class WordCounter {
+  constructor() {
+    this.COUNTER_NAME = '[WordCounter]';
+  }
+
   countWords(text) {
-    // Išvalome tekstą nuo specialių simbolių, paliekame tik žodžius ir tarpus
-    const cleanText = text.replace(/[^\w\s]/g, ' ');
+    // Išvalome tekstą nuo specialių simbolių ir skaičiuojame žodžius
+    const cleanText = text.replace(/[^\w\s]/g, ' ')
+                         .replace(/\s+/g, ' ')
+                         .trim();
     
-    // Pašaliname perteklinius tarpus
-    const withoutExtraSpaces = cleanText.replace(/\s+/g, ' ').trim();
+    const wordCount = cleanText.split(' ').length;
     
-    // Suskaičiuojame žodžius (suskaldom tekstą pagal tarpus)
-    const wordCount = withoutExtraSpaces.split(' ').length;
-    
+    console.log(`${this.COUNTER_NAME} Suskaičiuota žodžių: ${wordCount}`);
     return wordCount;
   }
 }
