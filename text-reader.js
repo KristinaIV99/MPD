@@ -129,11 +129,10 @@ export class TextReader {
   _initWorker() {
     if (typeof Worker !== 'undefined') {
       try {
-        this.worker = new Worker('https://kristinaiv99.github.io/MPD/text-reader.worker.js',
-  {
-          type: 'module',
-          name: 'textReaderWorker'
-        });
+        this.worker = new Worker('./text-reader.worker.js', {
+		  type: 'module',
+		  name: 'textReaderWorker'
+		  
         this.worker.onerror = (e) => {
           this.config.logger.debug('Worker error:', e.error);
           this._workerAvailable = false;
