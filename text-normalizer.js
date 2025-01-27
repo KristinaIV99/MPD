@@ -13,8 +13,7 @@ export class TextNormalizer {
       inlineCode: /`([^`]+)`/g,
 	  enDash: /–/g,    // Trumpesnis brūkšnys (en dash)
       quotes: /[""'']/g, // Įvairūs kabutės
-      longDash: /\*\*\*/g,  // Naujas šablonas trims žvaigždutėms
-	  mixedFormatting: /\*[_]{2}(.+?)[_]{2}\*/g
+      longDash: /\*\*\*/g  // Naujas šablonas trims žvaigždutėms
     };
   }
   
@@ -22,34 +21,37 @@ export class TextNormalizer {
     try {
       let normalized = text;
       
-      // Pirma apdorojame tris žvaigždutes į ilgą brūkšnį
+      // 1. Pirma apdorojame tris žvaigždutes į ilgą brūkšnį
       normalized = normalized.replace(this.patterns.longDash, '—');
       
-      // 1. Horizontalios linijos (su patterns)
+      // 2. Sąrašai (su patterns)
+      normalized = normalized.replace(this.patterns.lists, '* ');
+	  
+      // 3. Pakeičiame * į _
+      normalized = normalized.replace(/\*/g, '_');
+      
+      // 4. Horizontalios linijos (su patterns)
       normalized = normalized.replace(this.patterns.horizontalRules, '---');
       
-      // 2. Headers (su patterns)
+      // 5. Headers (su patterns)
       normalized = normalized.replace(this.patterns.headers, '# $2');
       
-      // 3. Sąrašai (su patterns)
-      normalized = normalized.replace(this.patterns.lists, '* ');
-      
-      // 4. Citatos
+      // 6. Citatos
       normalized = this.normalizeQuotes(normalized);
       
-      // 5. Kodo blokai (su patterns)
+      // 7. Kodo blokai (su patterns)
       normalized = this.normalizeCodeBlocks(normalized);
       
-      // 6. Specialūs simboliai
+      // 8. Specialūs simboliai
       normalized = normalized
         .replace(this.patterns.quotes, '"')   // Standartizuoja kabutes
         .replace(this.patterns.enDash, '-')   // Trumpą brūkšnį keičia į paprastą
         .replace(/\.{3}/g, '…');
       
-      // 7. Emphasis
+      // 9. Emphasis
       normalized = this.handleEmphasis(normalized);
       
-      // 8. Paragrafų tvarkymas
+      // 10. Paragrafų tvarkymas
       normalized = this.normalizeParagraphs(normalized);
       
       this.logger.log('Markdown normalized successfully');
