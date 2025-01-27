@@ -10,6 +10,9 @@ export class TextNormalizer {
       horizontalRules: /^(?:[-*_]\s*){3,}$/gm,
       codeBlocks: /```([^`]+)```/g,
       inlineCode: /`([^`]+)`/g
+	  enDash: /–/g,    // Trumpesnis brūkšnys (en dash)
+      quotes: /[""'']/g // Įvairūs kabutės
+	  mixedFormatting: /[*_]{1,3}(.+?)[*_]{1,3}/g
     };
   }
   
@@ -34,8 +37,8 @@ export class TextNormalizer {
       
       // 6. Specialūs simboliai
       normalized = normalized
-        .replace(/[""]/g, '"')
-        .replace(/['']/g, "'")
+        .replace(this.patterns.quotes, '"')   // Standartizuoja kabutes
+        .replace(this.patterns.enDash, '-')   // Trumpą brūkšnį keičia į paprastą
         .replace(/\.{3}/g, '…');
       
       // 7. Emphasis
@@ -70,7 +73,21 @@ export class TextNormalizer {
   handleEmphasis(text) {
     let result = text;
     
-    // Strong emphasis
+    // Pirma tvarkome kombinuotą formatavimą
+    result = result.replace(this.patterns.mixedFormatting, (match, content) => {
+      const hasStrong = match.includes('__') || match.includes('**');
+      const hasEmphasis = match.includes('_') || match.includes('*');
+      
+      if (hasStrong && hasEmphasis) {
+        return `**_${content}_**`;  // Standartizuojame į **_turinys_**
+      } else if (hasStrong) {
+        return `**${content}**`;
+      } else {
+        return `_${content}_`;
+      }
+    });
+    
+    // Tada tvarkome paprastą formatavimą
     result = result
       .replace(/\*\*([^*]+)\*\*/g, '**$1**')
       .replace(/__([^_]+)__/g, '**$1**');
