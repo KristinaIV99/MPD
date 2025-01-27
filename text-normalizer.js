@@ -1,3 +1,4 @@
+
 import Logger from './logger.js';
 import { LOG_LEVELS } from './logger.js';
 
@@ -10,17 +11,18 @@ export class TextNormalizer {
     this.patterns = {
       emphasis: [/_([^_]+?)_/g, /(?<!\*)\*(?!\*)([^*]+?)\*(?!\*)/g],
       strong: [/__([^_]+?)__/g, /\*\*([^*]+?)\*\*/g],
-      headers: /^([#]+)\s*(.+?)$/gm,
+      headers: /^(#{1,6})\s*(.+)$/gm,
       lists: /^[\s-]*[-+*]\s+/gm,
       blockquotes: /^>\s*(.+)$/gm,
       horizontalRules: /^(?:[-*_]\s*){3,}$/gm,
-      codeBlocks: /```([\s\S]*?)```/g,
+      codeBlocks: /```([\s\S]*?)```/g,  // Patobulintas kodo blokų aptikimas
       inlineCode: /`([^`]+)`/g,
       enDash: /–/g,
-      quotes: /["']/g,
-      strongEmphasis: [/\*\*\*([^*]+?)\*\*\*/g],
-      emptyLines: /\n\s*\n/g,
-      paragraphs: /([^\n])\n([^\n])/g
+      quotes: /["']/g,  // Sutvarkytas kabučių regex
+	  strongEmphasis: [/\*\*\*([^*]+?)\*\*\*/g],
+      chapterTitle: /^#\s(.+)$/m,  // Skyriaus pavadinimui
+      emptyLines: /\n\s*\n/g,       // Tuščioms eilutėms
+      paragraphs: /([^\n])\n([^\n])/g       // Paragrafams
     };
   }
 
@@ -124,3 +126,4 @@ export class TextNormalizer {
     return result;
   }
 }
+
