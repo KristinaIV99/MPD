@@ -1,4 +1,5 @@
 
+
 export class TextNormalizer {
   constructor(logger) {
     this.logger = logger;
@@ -13,7 +14,7 @@ export class TextNormalizer {
       inlineCode: /`([^`]+)`/g,
 	  enDash: /–/g,    // Trumpesnis brūkšnys (en dash)
       quotes: /[""'']/g, // Įvairūs kabutės
-      longDash: /\*\*\*\*/g  // Naujas šablonas trims žvaigždutėms
+      longDash: /\*\*\*/g  // Naujas šablonas trims žvaigždutėms
     };
   }
   
@@ -21,20 +22,17 @@ export class TextNormalizer {
     try {
       let normalized = text;
       
-      // 1. Pirma apdorojame tris žvaigždutes į ilgą brūkšnį
-      normalized = normalized.replace(this.patterns.longDash, '—');
+      // 1.Pirma tvarkome antraštes Headers (su patterns)
+      normalized = normalized.replace(this.patterns.headers, '# $2');
       
       // 2. Sąrašai (su patterns)
       normalized = normalized.replace(this.patterns.lists, '- ');
-	  
-      // 3. Pakeičiame * į _
-      normalized = normalized.replace(/\*/g, '_');
       
-      // 4. Horizontalios linijos (su patterns)
+      // 4. Pirma apdorojame tris žvaigždutes į ilgą brūkšnį
+      normalized = normalized.replace(this.patterns.longDash, '—');
+      
+      // 5. Horizontalios linijos (su patterns)
       normalized = normalized.replace(this.patterns.horizontalRules, '---');
-      
-      // 5. Headers (su patterns)
-      normalized = normalized.replace(this.patterns.headers, '# $2');
       
       // 6. Citatos
       normalized = this.normalizeQuotes(normalized);
