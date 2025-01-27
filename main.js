@@ -1,4 +1,3 @@
-import { TextNormalizer } from './text-normalizer.js';
 import { TextReader } from './text-reader.js';
 import { WordCounter } from './word-counter.js';
 
@@ -51,13 +50,15 @@ class App {
       const text = await this.reader.readFile(file);
       console.log(`${this.APP_NAME} Failas sėkmingai nuskaitytas`);
       
-      // Skaičiuojame žodžius
+      // Skaičiuojame žodžius ir gauname statistiką
       console.log(`${this.APP_NAME} Pradedamas žodžių skaičiavimas`);
       const wordCount = this.counter.countWords(text);
-      console.log(`${this.APP_NAME} Žodžių suskaičiuota:`, wordCount);
+	  const stats = this.counter.getWordStatistics(wordCount.words);
+      console.log(`${this.APP_NAME} Žodžių suskaičiuota:`, wordCount.totalWords);
+      console.log(`${this.APP_NAME} Statistika:`, stats);
       
-      // Atnaujiname žodžių skaičių UI
-      this.updateWordCount(wordCount);
+      // Atnaujiname UI
+      this.updateWordCount(wordCount, stats);
       
       this.setContent(text);
       console.log(`${this.APP_NAME} Teksto turinys sėkmingai įkeltas`);
@@ -73,10 +74,22 @@ class App {
     }
   }
 
-  updateWordCount(count) {
-    console.log(`${this.APP_NAME} Atnaujinamas žodžių skaičius:`, count);
-    this.wordCount.textContent = `Žodžių skaičius: ${count}`;
-  }
+  updateWordCount(count, stats) {
+      // Išvalome seną turinį
+      this.wordCount.textContent = '';
+      
+      // Sukuriame ir pridedame žodžių skaičiaus elementą
+      const totalWords = document.createElement('div');
+      totalWords.textContent = `Žodžių skaičius: ${count.totalWords}`;
+      this.wordCount.appendChild(totalWords);
+      
+      // Sukuriame ir pridedame unikalių žodžių elementą
+      const uniqueWords = document.createElement('div');
+      uniqueWords.textContent = `Unikalių žodžių: ${stats.uniqueWords}`;
+      this.wordCount.appendChild(uniqueWords);
+      
+      console.log(`${this.APP_NAME} Atnaujintas žodžių skaičius:`, count.totalWords);
+    }
 
   setContent(text) {
     const div = document.createElement('div');
