@@ -1,224 +1,163 @@
-import { marked } from './vendor/marked.esm.js';
 import Logger from './logger.js';
 import { LOG_LEVELS } from './logger.js';
 
 export class TextReader {
- constructor(config = {}) {
-   this.config = {
-     chunkSize: 1024 * 1024,
-     maxFileSize: 100 * 1024 * 1024,
-     allowedTypes: [
-       'text/markdown',
-       'text/plain',
-       'application/octet-stream'
-     ],
-     encoding: 'utf-8',
-     maxRetries: 3,
-     sanitizeHTML: true,
-     workerEnabled: true,
-     chunkOverlap: 1024,
-     logger: new Logger('TextReader'),
-     logLevel: LOG_LEVELS.ERROR,
-     ...config
-   };
+constructor(config = {}) {
+  this.config = {
+    chunkSize: 1024 * 1024,
+    maxFileSize: 100 * 1024 * 1024,
+    allowedTypes: [
+      'text/markdown',
+      'text/plain',
+      'application/octet-stream'
+    ],
+    encoding: 'utf-8',
+    maxRetries: 3,
+    workerEnabled: true,
+    chunkOverlap: 1024,
+    logger: new Logger('TextReader'),
+    logLevel: LOG_LEVELS.ERROR,
+    ...config
+  };
+  
+  this.abortController = new AbortController();
+  this.events = new EventTarget();
+  this.worker = null;
+  this._workerAvailable = false;
+  this.activeJobId = 0;
+  this.activeRequests = new Set();
+  
+  if (this.config.workerEnabled) {
+    this._initWorker();
+  }
+}
+
+ async readFile(file) {
+   this._validateFile(file);
    
-   this.abortController = new AbortController();
-   this.events = new EventTarget();
-   this.worker = null;
-   this._workerAvailable = false;
-   this.activeJobId = 0;
-   this.activeRequests = new Set();
-   
-   if (this.config.workerEnabled) {
-     this._initWorker();
+   try {
+     const text = await this._readWithProgress(file);
+     return text; // Grąžiname tik tekstą
+   } finally {
+     this._cleanup();
    }
  }
 
-  async readFile(file) {
-    this._validateFile(file);
-    
-    try {
-      const text = await this._readWithProgress(file);
-      return await this._parseContent(text);
-    } finally {
-      this._cleanup();
-    }
+ _validateFile(file) {
+  this.config.logger.debug(`Failo informacija: 
+    Pavadinimas: ${file.name}
+    Dydis: ${file.size}
+    Tipas: ${file.type}
+    Plėtinys: ${file.name.split('.').pop()}`
+  );
+  
+  if (file.size > this.config.maxFileSize) {
+    throw new Error(`Failas viršija ${this.config.maxFileSize/1024/1024}MB ribą`);
   }
+  
+  if (!this.config.allowedTypes.includes(file.type)) {
+    if (file.name.toLowerCase().endsWith('.md')) {
+      return;
+    }
+    throw new Error(`Netinkamas failo formatas: ${file.type}. Leidžiami tipai: ${this.config.allowedTypes.join(', ')}`);
+  }
+ }
 
-  _validateFile(file) {
-   this.config.logger.debug(`Failo informacija: 
-     Pavadinimas: ${file.name}
-     Dydis: ${file.size}
-     Tipas: ${file.type}
-     Plėtinys: ${file.name.split('.').pop()}`
+ async _readWithProgress(file) {
+   const offsets = Array.from(
+     {length: Math.ceil(file.size/this.config.chunkSize)}, 
+     (_, i) => i * this.config.chunkSize
    );
    
-   if (file.size > this.config.maxFileSize) {
-     throw new Error(`Failas viršija ${this.config.maxFileSize/1024/1024}MB ribą`);
-   }
+   const chunks = await Promise.all(
+     offsets.map(offset => this._readChunkWithRetry(file, offset))
+   );
    
-   if (!this.config.allowedTypes.includes(file.type)) {
-     if (file.name.toLowerCase().endsWith('.md')) {
+   return chunks.join('');
+ }
+
+ async _readChunkWithRetry(file, offset, attempt = 1) {
+   try {
+     const chunk = await this._readChunk(file, offset);
+     this._dispatchProgress(file, offset + this.config.chunkSize);
+     return chunk;
+   } catch (error) {
+     if (attempt <= this.config.maxRetries) {
+       return this._readChunkWithRetry(file, offset, attempt + 1);
+     }
+     throw error;
+   }
+ }
+
+ _readChunk(file, offset) {
+   return new Promise((resolve, reject) => {
+     if (this.abortController.signal.aborted) {
+       reject(new DOMException('Operation aborted', 'AbortError'));
        return;
      }
-     throw new Error(`Netinkamas failo formatas: ${file.type}. Leidžiami tipai: ${this.config.allowedTypes.join(', ')}`);
+
+     const reader = new FileReader();
+     const slice = file.slice(offset, offset + this.config.chunkSize + this.config.chunkOverlap);
+
+     reader.onload = () => resolve(reader.result);
+     reader.onerror = () => reject(reader.error);
+     reader.onabort = () => reject(new DOMException('Operation aborted', 'AbortError'));
+     
+     const abortHandler = () => {
+       reader.abort();
+       reject(new DOMException('Operation aborted', 'AbortError'));
+     };
+
+     this.abortController.signal.addEventListener('abort', abortHandler, { once: true });
+     reader.readAsText(slice, this.config.encoding);
+   });
+ }
+
+ _initWorker() {
+   if (typeof Worker !== 'undefined') {
+     try {
+       this.worker = new Worker('./text-reader.worker.js', {
+         type: 'module',
+         name: 'textReaderWorker'
+       });
+       this.worker.onerror = (e) => {
+         this.config.logger.debug('Worker error:', e.error);
+         this._workerAvailable = false;
+       };
+       this._workerAvailable = true;
+     } catch (e) {
+       this.config.logger.debug('Worker init failed:', e);
+       this._workerAvailable = false;
+     }
    }
-  }
+ }
 
-  async _readWithProgress(file) {
-    const offsets = Array.from(
-      {length: Math.ceil(file.size/this.config.chunkSize)}, 
-      (_, i) => i * this.config.chunkSize
-    );
-    
-    const chunks = await Promise.all(
-      offsets.map(offset => this._readChunkWithRetry(file, offset))
-    );
-    
-    return chunks.join('');
-  }
+ _dispatchProgress(file, loaded) {
+   const percent = loaded >= file.size ? 100 : 
+     Math.round((loaded / file.size) * 100);
+     
+   this.events.dispatchEvent(new CustomEvent('progress', {
+     detail: { percent, loaded, total: file.size }
+   }));
+ }
 
-  async _readChunkWithRetry(file, offset, attempt = 1) {
-    try {
-      const chunk = await this._readChunk(file, offset);
-      this._dispatchProgress(file, offset + this.config.chunkSize);
-      return chunk;
-    } catch (error) {
-      if (attempt <= this.config.maxRetries) {
-        return this._readChunkWithRetry(file, offset, attempt + 1);
-      }
-      throw error;
-    }
-  }
+ abort() {
+   this.activeRequests.forEach(jobId => {
+     this.worker?.postMessage({ type: 'cancel', jobId });
+   });
+   this.activeRequests.clear();
+   
+   if (this.worker) {
+     this.worker.terminate();
+     this._initWorker();
+   }
+   
+   this.abortController.abort();
+   this.config.logger.warn('Skaitymas nutrauktas');
+ }
 
-  _readChunk(file, offset) {
-    return new Promise((resolve, reject) => {
-      if (this.abortController.signal.aborted) {
-        reject(new DOMException('Operation aborted', 'AbortError'));
-        return;
-      }
-
-      const reader = new FileReader();
-      const slice = file.slice(offset, offset + this.config.chunkSize + this.config.chunkOverlap);
-
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(reader.error);
-      reader.onabort = () => reject(new DOMException('Operation aborted', 'AbortError'));
-      
-      const abortHandler = () => {
-        reader.abort();
-        reject(new DOMException('Operation aborted', 'AbortError'));
-      };
-
-      this.abortController.signal.addEventListener('abort', abortHandler, { once: true });
-      reader.readAsText(slice, this.config.encoding);
-    });
-  }
-
-  async _parseContent(text) {
-    return this._workerAvailable 
-      ? this._parseWithWorker(text) 
-      : this._parseInMainThread(text);
-  }
-
-  _initWorker() {
-    if (typeof Worker !== 'undefined') {
-      try {
-        this.worker = new Worker('./text-reader.worker.js', {
-          type: 'module',
-          name: 'textReaderWorker'
-        });
-        this.worker.onerror = (e) => {
-          this.config.logger.debug('Worker error:', e.error);
-          this._workerAvailable = false;
-        };
-        this._workerAvailable = true;
-      } catch (e) {
-        this.config.logger.debug('Worker init failed:', e);
-        this._workerAvailable = false;
-      }
-    }
-  }
-
-  _parseWithWorker(text) {
-    this.config.logger.debug('Pradedamas worker apdorojimas');
-    return new Promise((resolve, reject) => {
-      const jobId = ++this.activeJobId;
-      this.activeRequests.add(jobId);
-      this.config.logger.debug(`Sukurtas naujas job ID: ${jobId}`);
-
-      const messageHandler = (e) => {
-        if (e.data.jobId !== jobId) {
-          this.config.logger.debug(`Praleistas neatitinkantis job ID: ${e.data.jobId}`);
-          return;
-        }
-        
-        this.config.logger.debug(`Gautas atsakymas iš worker, job ID: ${jobId}`);
-        this.worker.removeEventListener('message', messageHandler);
-        this.activeRequests.delete(jobId);
-        this.config.logger.debug(`Pašalintas job ID: ${jobId} iš aktyvių užklausų`);
-
-        if (e.data.error) {
-          this.config.logger.error(`Worker klaida: ${e.data.error}`);
-          reject(new Error(e.data.error));
-        } else {
-          resolve(e.data.html);
-        }
-      };
-
-      const abortHandler = () => {
-        this.config.logger.warn(`Nutraukiama užklausa job ID: ${jobId}`);
-        this.worker.postMessage({ type: 'cancel', jobId });
-        reject(new DOMException('Operation aborted', 'AbortError'));
-      };
-
-      this.abortController.signal.addEventListener('abort', abortHandler, { once: true });
-      this.worker.addEventListener('message', messageHandler);
-      
-      this.config.logger.debug(`Siunčiama užklausa į worker, job ID: ${jobId}`);
-      this.worker.postMessage({
-        text: text,
-        jobId,
-        sanitize: this.config.sanitizeHTML
-      });
-    });
-  }
-
-  _parseInMainThread(text) {
-    try {
-      return marked.parse(text);
-    } catch (error) {
-      this.config.logger.debug('Parsing error:', error);
-      return text;
-    }
-  }
-
-  _dispatchProgress(file, loaded) {
-    const percent = loaded >= file.size ? 100 : 
-      Math.round((loaded / file.size) * 100);
-      
-    this.events.dispatchEvent(new CustomEvent('progress', {
-      detail: { percent, loaded, total: file.size }
-    }));
-  }
-
-  abort() {
-    this.activeRequests.forEach(jobId => {
-      this.worker?.postMessage({ type: 'cancel', jobId });
-    });
-    this.activeRequests.clear();
-    
-    if (this.worker) {
-      this.worker.terminate();
-      this._initWorker();
-    }
-    
-    this.abortController.abort();
-    this.config.logger.warn('Skaitymas nutrauktas');
-  }
-
-  _cleanup() {
-    this.abort();
-    this.abortController = new AbortController();
-  }
+ _cleanup() {
+   this.abort();
+   this.abortController = new AbortController();
+ }
 }
