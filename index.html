@@ -11,11 +11,6 @@
     <link rel="icon" href="./icons/favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" href="./icons/icon-192x192.png">
     <meta name="mobile-web-app-capable" content="yes">
-    
-    <script>
-        // Pridedame testinį console.log prieš bet kokį kitą kodą
-        console.log('TESTAS - HTML dokumentas pradėjo krautis');
-    </script>
 </head>
 <body>
     <div id="app">
@@ -28,20 +23,18 @@
     <script type="module" src="./main.js"></script>
     
     <script>
-        console.log('TESTAS - Scripts sekcija pasiekta');
         const APP_NAME = '[App]';
-        
         if ('serviceWorker' in navigator) {
-            console.log('TESTAS - Bandoma registruoti Service Worker');
+            console.debug(`${APP_NAME} Registruojamas Service Worker...`);
             navigator.serviceWorker.register('./sw.js')
                 .then(registration => {
-                    console.log('TESTAS - Service Worker sėkmingai užregistruotas');
+                    console.debug(`${APP_NAME} Service Worker sėkmingai užregistruotas:`, registration.scope);
                 })
                 .catch(error => {
-                    console.log('TESTAS - Service Worker klaida:', error);
+                    console.error(`${APP_NAME} Service Worker registracijos klaida:`, error);
                 });
         } else {
-            console.log('TESTAS - Service Worker nepalaikomas');
+            console.warn(`${APP_NAME} Service Worker nepalaikomas šioje naršyklėje`);
         }
     </script>
 </body>
