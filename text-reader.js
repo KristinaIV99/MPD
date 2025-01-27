@@ -1,6 +1,4 @@
 import { marked } from './vendor/marked.esm.js';
-import purify from './vendor/purify.es.mjs';
-const DOMPurify = purify(window);
 import Logger from './logger.js';
 import { LOG_LEVELS } from './logger.js';
 
@@ -23,9 +21,6 @@ export class TextReader {
      logLevel: LOG_LEVELS.ERROR,
      ...config
    };
-
-   this.purify = DOMPurify;
-   this.config.logger.debug('DOMPurify initialized:', DOMPurify);
    
    this.abortController = new AbortController();
    this.events = new EventTarget();
@@ -51,7 +46,6 @@ export class TextReader {
   }
 
   _validateFile(file) {
-   this.config.logger.debug('DOMPurify loaded:', DOMPurify);
    this.config.logger.debug(`Failo informacija: 
      Pavadinimas: ${file.name}
      Dydis: ${file.size}
@@ -63,13 +57,13 @@ export class TextReader {
      throw new Error(`Failas viršija ${this.config.maxFileSize/1024/1024}MB ribą`);
    }
    
- if (!this.config.allowedTypes.includes(file.type)) {
-   if (file.name.toLowerCase().endsWith('.md')) {
-     return;
+   if (!this.config.allowedTypes.includes(file.type)) {
+     if (file.name.toLowerCase().endsWith('.md')) {
+       return;
+     }
+     throw new Error(`Netinkamas failo formatas: ${file.type}. Leidžiami tipai: ${this.config.allowedTypes.join(', ')}`);
    }
-   throw new Error(`Netinkamas failo formatas: ${file.type}. Leidžiami tipai: ${this.config.allowedTypes.join(', ')}`);
- }
-}
+  }
 
   async _readWithProgress(file) {
     const offsets = Array.from(
@@ -131,9 +125,9 @@ export class TextReader {
     if (typeof Worker !== 'undefined') {
       try {
         this.worker = new Worker('./text-reader.worker.js', {
-		  type: 'module',
-		  name: 'textReaderWorker'
-		});
+          type: 'module',
+          name: 'textReaderWorker'
+        });
         this.worker.onerror = (e) => {
           this.config.logger.debug('Worker error:', e.error);
           this._workerAvailable = false;
@@ -147,63 +141,52 @@ export class TextReader {
   }
 
   _parseWithWorker(text) {
-	 this.config.logger.debug('Pradedamas worker apdorojimas');
-     return new Promise((resolve, reject) => {
-         const jobId = ++this.activeJobId;
-         this.activeRequests.add(jobId);
-         this.config.logger.debug(`Sukurtas naujas job ID: ${jobId}`);
-  
-         const messageHandler = (e) => {
-             if (e.data.jobId !== jobId) {
-                 this.config.logger.debug(`Praleistas neatitinkantis job ID: ${e.data.jobId}`);
-                 return;
-             }
-             
-             this.config.logger.debug(`Gautas atsakymas iš worker, job ID: ${jobId}`);
-             this.worker.removeEventListener('message', messageHandler);
-             this.activeRequests.delete(jobId);
-             this.config.logger.debug(`Pašalintas job ID: ${jobId} iš aktyvių užklausų`);
-  
-             if (e.data.error) {
-                 this.config.logger.error(`Worker klaida: ${e.data.error}`);
-                 reject(new Error(e.data.error));
-             } else {
-                 this.config.logger.debug('Pradedamas HTML sanitizavimas');
-                 resolve(this._sanitizeOutput(e.data.html));
-             }
-         };
-  
-         const abortHandler = () => {
-             this.config.logger.warn(`Nutraukiama užklausa job ID: ${jobId}`);
-             this.worker.postMessage({ type: 'cancel', jobId });
-             reject(new DOMException('Operation aborted', 'AbortError'));
-         };
-  
-         this.abortController.signal.addEventListener('abort', abortHandler, { once: true });
-         this.worker.addEventListener('message', messageHandler);
-         
-         this.config.logger.debug(`Siunčiama užklausa į worker, job ID: ${jobId}`);
-         this.worker.postMessage({
-             text: text,
-             jobId,
-             sanitize: this.config.sanitizeHTML
-         });
-     });
-  }
+    this.config.logger.debug('Pradedamas worker apdorojimas');
+    return new Promise((resolve, reject) => {
+      const jobId = ++this.activeJobId;
+      this.activeRequests.add(jobId);
+      this.config.logger.debug(`Sukurtas naujas job ID: ${jobId}`);
 
-  _sanitizeOutput(html) {
-    return this.config.sanitizeHTML 
-      ? this.purify.sanitize(html, {
-          FORBID_TAGS: ['iframe', 'script'],
-          FORBID_ATTR: ['onclick']
-        })
-      : html;
+      const messageHandler = (e) => {
+        if (e.data.jobId !== jobId) {
+          this.config.logger.debug(`Praleistas neatitinkantis job ID: ${e.data.jobId}`);
+          return;
+        }
+        
+        this.config.logger.debug(`Gautas atsakymas iš worker, job ID: ${jobId}`);
+        this.worker.removeEventListener('message', messageHandler);
+        this.activeRequests.delete(jobId);
+        this.config.logger.debug(`Pašalintas job ID: ${jobId} iš aktyvių užklausų`);
+
+        if (e.data.error) {
+          this.config.logger.error(`Worker klaida: ${e.data.error}`);
+          reject(new Error(e.data.error));
+        } else {
+          resolve(e.data.html);
+        }
+      };
+
+      const abortHandler = () => {
+        this.config.logger.warn(`Nutraukiama užklausa job ID: ${jobId}`);
+        this.worker.postMessage({ type: 'cancel', jobId });
+        reject(new DOMException('Operation aborted', 'AbortError'));
+      };
+
+      this.abortController.signal.addEventListener('abort', abortHandler, { once: true });
+      this.worker.addEventListener('message', messageHandler);
+      
+      this.config.logger.debug(`Siunčiama užklausa į worker, job ID: ${jobId}`);
+      this.worker.postMessage({
+        text: text,
+        jobId,
+        sanitize: this.config.sanitizeHTML
+      });
+    });
   }
 
   _parseInMainThread(text) {
     try {
-      const rawHtml = marked.parse(text);
-      return this._sanitizeOutput(rawHtml);
+      return marked.parse(text);
     } catch (error) {
       this.config.logger.debug('Parsing error:', error);
       return text;
@@ -211,12 +194,12 @@ export class TextReader {
   }
 
   _dispatchProgress(file, loaded) {
-      const percent = loaded >= file.size ? 100 : 
-          Math.round((loaded / file.size) * 100);
+    const percent = loaded >= file.size ? 100 : 
+      Math.round((loaded / file.size) * 100);
       
-      this.events.dispatchEvent(new CustomEvent('progress', {
-          detail: { percent, loaded, total: file.size }
-      }));
+    this.events.dispatchEvent(new CustomEvent('progress', {
+      detail: { percent, loaded, total: file.size }
+    }));
   }
 
   abort() {
