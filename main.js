@@ -1,10 +1,12 @@
 import { TextNormalizer } from './text-normalizer.js';
 import { TextReader } from './text-reader.js';
+import { WordCounter } from './word-counter.js';
 
 class App {
   constructor() {
     this.APP_NAME = '[App]';
     this.reader = new TextReader();
+	this.counter = new WordCounter();
     
     console.log(`${this.APP_NAME} Konstruktorius inicializuotas`);
     this.initUI();
@@ -15,9 +17,12 @@ class App {
   initUI() {
     this.fileInput = document.getElementById('fileInput');
     this.content = document.getElementById('content');
+	this.wordCount = document.createElement('div');
+    this.wordCount.className = 'word-count';
     this.progressBar = document.createElement('div');
     this.progressBar.className = 'progress-bar';
     document.body.prepend(this.progressBar);
+	document.body.prepend(this.wordCount);
     console.log(`${this.APP_NAME} UI elementai inicializuoti`);
   }
 
@@ -59,6 +64,11 @@ class App {
       this.fileInput.value = '';
       this.hideLoadingState();
     }
+  }
+
+  // Naujas metodas žodžių skaičiaus atvaizdavimui
+  updateWordCount(count) {
+    this.wordCount.textContent = `Žodžių skaičius: ${count}`;
   }
 
   setContent(text) {
