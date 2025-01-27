@@ -1,5 +1,3 @@
-
-
 import Logger from './logger.js';
 import { LOG_LEVELS } from './logger.js';
 
@@ -27,56 +25,68 @@ export class TextNormalizer {
     };
   }
 
-normalizeMarkdown(text) {
-    try {
-        this.logger.debug('Starting markdown normalization');
-        let normalized = text;
-        
-        // Pirmiausia tvarkome emphasis ir strong formatavimą
-        normalized = this.handleEmphasis(normalized);
-        this.logger.debug('Emphasis handled');
-        
-        // Tada antraštes
-        normalized = this.handleHeaders(normalized);
-        this.logger.debug('Headers processed');
-        
-        // Tada paragrafus ir tarpus
-        normalized = this.handleParagraphsAndSpacing(normalized);
-        this.logger.debug('Paragraphs and spacing processed');
-        
-        // Tada likusius elementus
-        normalized = this.processBasicElements(normalized);
-        normalized = this.normalizeQuotes(normalized);
-        normalized = this.normalizeCodeBlocks(normalized);
-        normalized = this.handleSpecialSymbols(normalized);
-        
-        this.logger.debug('Markdown normalized successfully');
-        return normalized;
-    } catch (error) {
-        this.logger.error('Normalization failed:', error);
-        return text;
-    }
-}
+  normalizeMarkdown(text) {
+      try {
+          this.logger.debug('Starting markdown normalization');
+          let normalized = text;
+          
+          // Pirmiausia tvarkome emphasis ir strong formatavimą
+          normalized = this.handleEmphasis(normalized);
+          this.logger.debug('Emphasis handled');
+          
+          // Tada antraštes
+          normalized = this.handleHeaders(normalized);
+          this.logger.debug('Headers processed');
+          
+          // Tada paragrafus ir tarpus
+          normalized = this.handleParagraphsAndSpacing(normalized);
+          this.logger.debug('Paragraphs and spacing processed');
+          
+          // Tada likusius elementus
+          normalized = this.processBasicElements(normalized);
+          normalized = this.normalizeQuotes(normalized);
+          normalized = this.normalizeCodeBlocks(normalized);
+          normalized = this.handleSpecialSymbols(normalized);
+          
+          this.logger.debug('Markdown normalized successfully');
+          return normalized;
+      } catch (error) {
+          this.logger.error('Normalization failed:', error);
+          console.error('Error details:', error); // Pridedame papildomą klaidų logginimą
+          throw error;
+      }
+  }
 
-handleHeaders(text) {
-    this.logger.debug('Processing headers');
-    // Pašalina ___ iš antraščių ir prideda tuščią eilutę
-    return text
-        .replace(/^#\s*_{3}(.+?)_{3}/gm, '# $1\n\n')
-        .replace(/^(#+)\s*(.+?)$/gm, '$1 $2\n\n');
-}
-
-handleParagraphsAndSpacing(text) {
-    this.logger.debug('Processing paragraphs and spacing');
-    return text
-        // Prideda tuščią eilutę po citatos
-        .replace(/^>\s*(.+)$/gm, '> $1\n\n')
-        // Prideda tuščią eilutę tarp paragrafų
-        .replace(/([^\n])\n(?=[^\n])/g, '$1\n\n')
-        // Pašalina perteklinius tarpus
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
-}
+  handleHeaders(text) {
+      this.logger.debug('Processing headers');
+      this.logger.debug('Before headers:', text);
+      
+      // Pašalina ___ iš antraščių ir prideda tuščią eilutę
+      const result = text
+          .replace(/^#\s*_{3}(.+?)_{3}/gm, '# $1\n\n')
+          .replace(/^(#+)\s*(.+?)$/gm, '$1 $2\n\n');
+      
+      this.logger.debug('After headers:', result);
+      return result;
+  }
+  
+  handleParagraphsAndSpacing(text) {
+      this.logger.debug('Processing paragraphs and spacing');
+      this.logger.debug('Before paragraphs:', text);
+      
+      // Tvarko paragrafus ir tarpus
+      const result = text
+          // Prideda tuščią eilutę po citatos
+          .replace(/^>\s*(.+)$/gm, '> $1\n\n')
+          // Prideda tuščią eilutę tarp paragrafų
+          .replace(/([^\n])\n(?=[^\n])/g, '$1\n\n')
+          // Pašalina perteklinius tarpus
+          .replace(/\n{3,}/g, '\n\n')
+          .trim();
+      
+      this.logger.debug('After paragraphs:', result);
+      return result;
+  }
 
   processBasicElements(text) {
     this.logger.debug('Processing basic elements');
