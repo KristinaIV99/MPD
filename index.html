@@ -3,41 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#2196f3">
     <title>Skaityk ir tobulėk</title>
     
-    <!-- Manifest and Icons -->
     <link rel="manifest" href="./manifest.json">
     <link rel="stylesheet" href="./main.css">
     <link rel="icon" href="./icons/favicon.ico" type="image/x-icon">
-    <!-- iOS palaikymas -->
     <link rel="apple-touch-icon" href="./icons/icon-192x192.png">
     <meta name="mobile-web-app-capable" content="yes">
+    
+    <script>
+        // Pridedame testinį console.log prieš bet kokį kitą kodą
+        console.log('TESTAS - HTML dokumentas pradėjo krautis');
+    </script>
 </head>
 <body>
     <div id="app">
-        <!-- Čia bus pagrindinis programos turinys -->
         <input type="file" accept=".md" id="fileInput">
         <div id="content"></div>
     </div>
+    
     <script type="module" src="./text-reader.js"></script>
     <script type="module" src="text-normalizer.js"></script>
     <script type="module" src="./main.js"></script>
+    
     <script>
+        console.log('TESTAS - Scripts sekcija pasiekta');
         const APP_NAME = '[App]';
-        // Service Worker registracija
+        
         if ('serviceWorker' in navigator) {
-            console.debug(`${APP_NAME} Registruojamas Service Worker...`);
+            console.log('TESTAS - Bandoma registruoti Service Worker');
             navigator.serviceWorker.register('./sw.js')
                 .then(registration => {
-                    console.debug(`${APP_NAME} Service Worker sėkmingai užregistruotas:`, registration.scope);
+                    console.log('TESTAS - Service Worker sėkmingai užregistruotas');
                 })
                 .catch(error => {
-                    console.error(`${APP_NAME} Service Worker registracijos klaida:`, error);
+                    console.log('TESTAS - Service Worker klaida:', error);
                 });
         } else {
-            console.warn(`${APP_NAME} Service Worker nepalaikomas šioje naršyklėje`);
+            console.log('TESTAS - Service Worker nepalaikomas');
         }
     </script>
 </body>
