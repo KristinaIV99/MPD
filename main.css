@@ -39,3 +39,14 @@
  border-radius: 4px;
  background: #f8d7da;
 }
+.word-count {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: #333;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 14px;
+  z-index: 1000;
+}
