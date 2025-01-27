@@ -112,5 +112,6 @@ export default class Logger {
 export const LOG_LEVELS = {
   ERROR: 'error',
   WARN: 'warn',
-  INFO: 'info'
+  INFO: 'info',
+  DEBUG: 'debug'
 };
