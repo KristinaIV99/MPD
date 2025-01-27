@@ -1,10 +1,8 @@
-import Logger from './logger.js';
-import { LOG_LEVELS } from './logger.js';
 import { TextNormalizer } from './text-normalizer.js'; 
 
-export class TextReader { // Named export
+export class TextReader {
   constructor(config = {}) {
-    const defaultLogger = new Logger('TextReader');
+    this.READER_NAME = '[TextReader]';
     
     this.config = {
       chunkSize: 1024 * 1024,
@@ -18,12 +16,10 @@ export class TextReader { // Named export
       maxRetries: 3,
       workerEnabled: true,
       chunkOverlap: 1024,
-      logger: defaultLogger,
-      logLevel: LOG_LEVELS.ERROR,
       ...config
     };
 
-    this.normalizer = new TextNormalizer(this.config.logger);
+    this.normalizer = new TextNormalizer();
     this.abortController = new AbortController();
     this.events = new EventTarget();
     this.worker = null;
@@ -48,7 +44,7 @@ export class TextReader { // Named export
   }
 
   _validateFile(file) {
-    this.config.logger.debug(`Failo informacija: 
+    console.debug(`${this.READER_NAME} Failo informacija: 
       Pavadinimas: ${file.name}
       Dydis: ${file.size}
       Tipas: ${file.type}
@@ -87,6 +83,7 @@ export class TextReader { // Named export
       this._dispatchProgress(file, offset + this.config.chunkSize);
       return chunk;
     } catch (error) {
+      console.warn(`${this.READER_NAME} Klaida skaitant chunk'ą (bandymas ${attempt}):`, error);
       if (attempt <= this.config.maxRetries) {
         return this._readChunkWithRetry(file, offset, attempt + 1);
       }
@@ -126,12 +123,12 @@ export class TextReader { // Named export
           name: 'textReaderWorker'
         });
         this.worker.onerror = (e) => {
-          this.config.logger.debug('Worker error:', e.error);
+          console.debug(`${this.READER_NAME} Worker error:`, e.error);
           this._workerAvailable = false;
         };
         this._workerAvailable = true;
       } catch (e) {
-        this.config.logger.debug('Worker init failed:', e);
+        console.debug(`${this.READER_NAME} Worker init failed:`, e);
         this._workerAvailable = false;
       }
     }
@@ -158,14 +155,13 @@ export class TextReader { // Named export
     }
 
     this.abortController.abort();
-    this.config.logger.warn('Skaitymas nutrauktas');
+    console.warn(`${this.READER_NAME} Skaitymas nutrauktas`);
   }
 
   _cleanup() {
     this.abortController = new AbortController();
   }
 
-  // Eventų valdymo metodai
   onProgress(callback) {
     this.events.addEventListener('progress', callback);
   }
