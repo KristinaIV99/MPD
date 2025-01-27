@@ -6,6 +6,7 @@ class App {
     this.APP_NAME = '[App]';
     this.reader = new TextReader();
     
+    console.log(`${this.APP_NAME} Konstruktorius inicializuotas`);
     this.initUI();
     this.bindEvents();
     this.isProcessing = false;
@@ -17,11 +18,13 @@ class App {
     this.progressBar = document.createElement('div');
     this.progressBar.className = 'progress-bar';
     document.body.prepend(this.progressBar);
+    console.log(`${this.APP_NAME} UI elementai inicializuoti`);
   }
 
   bindEvents() {
     this.fileInput.addEventListener('change', (e) => this.handleFile(e));
     this.reader.events.addEventListener('progress', (e) => this.updateProgress(e.detail));
+    console.log(`${this.APP_NAME} Event listeners prijungti`);
   }
 
   async handleFile(e) {
@@ -30,7 +33,7 @@ class App {
         console.warn(`${this.APP_NAME} Atšaukiama esama užklausa...`);
         this.reader.abort();
       }
-      console.debug(`${this.APP_NAME} Pradedamas naujo failo apdorojimas`);
+      console.log(`${this.APP_NAME} Pradedamas naujo failo apdorojimas`);
       this.isProcessing = true;
       this.fileInput.disabled = true;
       this.showLoadingState();
@@ -41,16 +44,16 @@ class App {
         return;
       }
 
-      console.debug(`${this.APP_NAME} Apdorojamas failas: ${file.name}`);
+      console.log(`${this.APP_NAME} Apdorojamas failas: ${file.name}`);
       const text = await this.reader.readFile(file);
-      console.debug(`${this.APP_NAME} Failas sėkmingai nuskaitytas`);
+      console.log(`${this.APP_NAME} Failas sėkmingai nuskaitytas`);
       this.setContent(text);
-      console.debug(`${this.APP_NAME} Teksto turinys sėkmingai įkeltas`);
+      console.log(`${this.APP_NAME} Teksto turinys sėkmingai įkeltas`);
     } catch(error) {
       console.error(`${this.APP_NAME} Failo apdorojimo klaida:`, error);
       this.handleError(error);
     } finally {
-      console.debug(`${this.APP_NAME} Baigiamas failo apdorojimas`);
+      console.log(`${this.APP_NAME} Baigiamas failo apdorojimas`);
       this.isProcessing = false;
       this.fileInput.disabled = false;
       this.fileInput.value = '';
@@ -97,6 +100,6 @@ class App {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  console.debug('[Main] Initializing application...');
+  console.log('[Main] Aplikacija inicializuojama...');
   window.app = new App();
 });
