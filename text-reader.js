@@ -1,6 +1,6 @@
 import Logger from './logger.js';
 import { LOG_LEVELS } from './logger.js';
-import { TextNormalizer } from './text-normalizer.js';
+import TextNormalizer from './text-normalizer.js';
 
 export class TextReader {
   constructor(config = {}) {
