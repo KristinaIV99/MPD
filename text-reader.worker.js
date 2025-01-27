@@ -7,10 +7,7 @@ const activeJobs = new Map();
 async function processMarkdown(text, sanitize) {
     try {
         const html = await marked.parse(text);
-        return sanitize ? DOMPurify.sanitize(html, {
-            FORBID_TAGS: ['iframe', 'script'],
-            FORBID_ATTR: ['onclick']
-        }) : html;
+        return sanitize ? DOMPurify.sanitize(html) : html;
     } catch (error) {
         throw new Error(`Markdown konvertavimo klaida: ${error.message}`);
     }
