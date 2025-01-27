@@ -30,34 +30,39 @@ class App {
   }
 
   async handleFile(e) {
-    try {
-      // 1. Atšaukti esamą užklausą
-      if(this.isProcessing) {
-        this.reader.abort();
-        this.logger.warn('Atšaukiama esama užklausa...');
-      }
-
-      // 2. Nustatyti loading state
-      this.isProcessing = true;
-      this.fileInput.disabled = true;
-      this.showLoadingState();
-
-      // 3. Apdoroti failą
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const html = await this.reader.readFile(file);
-      this.setSafeContent(html);
-
-    } catch (error) {
-      this.handleError(error);
-    } finally {
-      // 4. Atstatyti būseną
-      this.isProcessing = false;
-      this.fileInput.disabled = false;
-      this.fileInput.value = ''; // Reset input
-      this.hideLoadingState();
-    }
+     try {
+         if(this.isProcessing) {
+             this.logger.warn('Atšaukiama esama užklausa...');
+             this.reader.abort();
+         }
+  
+         this.logger.debug('Pradedamas naujo failo apdorojimas');
+         this.isProcessing = true;
+         this.fileInput.disabled = true;
+         this.showLoadingState();
+  
+         const file = e.target.files[0];
+         if (!file) {
+             this.logger.warn('Nepasirinktas failas');
+             return;
+         }
+  
+         this.logger.debug(`Apdorojamas failas: ${file.name}`);
+         const html = await this.reader.readFile(file);
+         this.logger.debug('Failas sėkmingai nuskaitytas');
+         this.setSafeContent(html);
+         this.logger.debug('HTML turinys sėkmingai įkeltas');
+  
+     } catch (error) {
+         this.logger.error('Failo apdorojimo klaida:', error);
+         this.handleError(error);
+     } finally {
+         this.logger.debug('Baigiamas failo apdorojimas');
+         this.isProcessing = false;
+         this.fileInput.disabled = false;
+         this.fileInput.value = '';
+         this.hideLoadingState();
+     }
   }
 
   setSafeContent(html) {
