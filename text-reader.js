@@ -157,7 +157,6 @@ constructor(config = {}) {
  }
 
  _cleanup() {
-   this.abort();
    this.abortController = new AbortController();
  }
 }
