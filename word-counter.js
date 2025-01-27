@@ -25,7 +25,7 @@ export class WordCounter {
       // Atnaujintas regex, kad įtrauktų švedų kalbos raides
       .filter(word => /[a-zA-ZåäöÅÄÖ]/.test(word));
 
-    console.log(`${this.COUNTER_NAME} Pavyzdys žodžių:`, words.slice(0, 20));
+    console.log(`${this.COUNTER_NAME} Pavyzdys žodžių:`, words.slice(0, 500));
     return words;
   }
 
@@ -50,7 +50,7 @@ export class WordCounter {
       .sort(([, a], [, b]) => b - a)
       .slice(0, 10);
       
-    console.log(`${this.COUNTER_NAME} 10 vanligaste orden:`, // "10 dažniausių žodžių" švediškai
+    console.log(`${this.COUNTER_NAME} 300 vanligaste orden:`, // "10 dažniausių žodžių" švediškai
       mostCommon.map(([word, count]) => `${word}: ${count}`));
 
     return {
