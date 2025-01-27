@@ -2,9 +2,9 @@
 import { marked } from './vendor/marked.esm.js';
 import purify from './vendor/purify.es.mjs';
 import Logger from './logger.js';
+import { LOG_LEVELS } from './logger.js';
 
 const DOMPurify = purify(self);
-const logger = new Logger('Worker');
 const activeJobs = new Map();
 logger.debug('purify importuotas:', purify);
 logger.debug('DOMPurify inicializuotas:', DOMPurify);
