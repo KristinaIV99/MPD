@@ -132,7 +132,7 @@ export class TextReader {
         this.worker = new Worker('./text-reader.worker.js', {
 		  type: 'module',
 		  name: 'textReaderWorker'
-		  
+		});
         this.worker.onerror = (e) => {
           this.config.logger.debug('Worker error:', e.error);
           this._workerAvailable = false;
