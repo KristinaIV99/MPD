@@ -2,8 +2,8 @@ export class TextNormalizer {
   constructor(logger) {
     this.logger = logger;
     this.patterns = {
-      emphasis: [/_([^_]+)_/g, /\*([^*]+)\*/g],
-      strong: [/__([^_]+)__/g, /\*\*([^*]+)\*\*/g],
+      emphasis: [/_([^_]+?)_/g, /(?<!\*)\*(?!\*)([^*]+?)\*(?!\*)/g],
+      strong: [/__([^_]+?)__/g, /\*\*([^*]+?)\*\*/g],
       headers: /^(#{1,6})\s*(.+)$/gm,
       lists: /^[\s-]*[-+*]\s+/gm,
       blockquotes: /^>\s*(.+)$/gm,
@@ -11,7 +11,8 @@ export class TextNormalizer {
       codeBlocks: /```([\s\S]*?)```/g,  // Patobulintas kodo blokų aptikimas
       inlineCode: /`([^`]+)`/g,
       enDash: /–/g,
-      quotes: /["']/g  // Sutvarkytas kabučių regex
+      quotes: /["']/g,  // Sutvarkytas kabučių regex
+	  strongEmphasis: [/\*\*\*([^*]+?)\*\*\*/g]
     };
   }
 
@@ -65,6 +66,9 @@ export class TextNormalizer {
   handleEmphasis(text) {
     let result = text;
     
+	// Pirma apdorojame trigubą formatavimą
+    result = result.replace(this.patterns.strongEmphasis, '***$1***');
+	  
     // Stiprus formatavimas (**)
     this.patterns.strong.forEach(regex => {
       result = result.replace(regex, '**$1**');
