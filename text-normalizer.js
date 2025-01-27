@@ -2,7 +2,8 @@
 import Logger from './logger.js';
 import { LOG_LEVELS } from './logger.js';
 
-constructor(logger) {
+class TextNormalizer {  // <--- PRIDĖTI KLĖS DEKLARACIJĄ
+  constructor(logger) {
     // Jei logger neperduotas, sukuriame naują
     this.logger = logger || new Logger('TextNormalizer', {
         saveLevels: ['error', 'debug'],
