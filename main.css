@@ -50,3 +50,20 @@
   font-size: 14px;
   z-index: 1000;
 }
+.progress-bar {
+  height: 3px;
+  background: #2196F3;
+  transition: width 0.3s ease;
+}
+
+.loading {
+  padding: 20px;
+  text-align: center;
+}
+
+.error {
+  color: #ff4444;
+  padding: 15px;
+  border: 1px solid #ff4444;
+  margin: 10px 0;
+}
