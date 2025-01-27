@@ -1,38 +1,48 @@
 export class TextNormalizer {
   constructor(logger) {
     this.logger = logger;
+    this.patterns = {
+      emphasis: [/_([^_]+)_/g, /\*([^*]+)\*/g],
+      strong: [/__([^_]+)__/g, /\*\*([^*]+)\*\*/g],
+      headers: /^(#{1,6})\s*(.+)$/gm,
+      lists: /^[\s-]*[-+*]\s+/gm,
+      blockquotes: /^>\s*(.+)$/gm,
+      horizontalRules: /^(?:[-*_]\s*){3,}$/gm,
+      codeBlocks: /```([^`]+)```/g,
+      inlineCode: /`([^`]+)`/g
+    };
   }
   
   normalizeMarkdown(text) {
     try {
       let normalized = text;
       
-      // 1. Horizontalios linijos (patobulintas - priima *, - ir _)
-      normalized = normalized.replace(/^\s*([*\-_])\1{2,}\s*$/gm, '---');
+      // 1. Horizontalios linijos (su patterns)
+      normalized = normalized.replace(this.patterns.horizontalRules, '---');
       
-      // 2. Headers (nepakeista - veikia gerai)
-      normalized = normalized.replace(/^#+\s+(.*?)\s*#*$/gm, '# $1');
+      // 2. Headers (su patterns)
+      normalized = normalized.replace(this.patterns.headers, '# $2');
       
-      // NAUJAS: Sąrašai
-      normalized = normalized.replace(/^[\s-]*[-+*]\s+/gm, '* ');
+      // 3. Sąrašai (su patterns)
+      normalized = normalized.replace(this.patterns.lists, '* ');
       
-      // 3. Citatos (nepakeista - veikia gerai)
+      // 4. Citatos
       normalized = this.normalizeQuotes(normalized);
       
-      // NAUJAS: Kodo blokai
+      // 5. Kodo blokai (su patterns)
       normalized = this.normalizeCodeBlocks(normalized);
       
-      // 4. Specialūs simboliai (papildyta)
+      // 6. Specialūs simboliai
       normalized = normalized
         .replace(/[""]/g, '"')
         .replace(/['']/g, "'")
-        .replace(/\.{3}/g, '…');      // Naujas: trys taškai → vienas simbolis
+        .replace(/\.{3}/g, '…');
       
-      // 5. Emphasis (nepakeista - veikia gerai)
+      // 7. Emphasis
       normalized = this.handleEmphasis(normalized);
       
-      // 6. Tarpai (papildyta tuščiomis eilutėmis prieš specialius elementus)
-      normalized = this.cleanWhitespace(normalized);
+      // 8. Paragrafų tvarkymas
+      normalized = this.normalizeParagraphs(normalized);
       
       this.logger.log('Markdown normalized successfully');
       return normalized;
@@ -45,36 +55,49 @@ export class TextNormalizer {
   normalizeQuotes(text) {
     return text
       .replace(/^(\s*)&/gm, '>')
-      .replace(/^>+/gm, '>');
+      .replace(/^>+/gm, '>')
+      .replace(this.patterns.blockquotes, '> $1');
   }
 
-  // NAUJAS metodas kodo blokams
   normalizeCodeBlocks(text) {
     return text
-      // Kodo blokai
-      .replace(/```(.*?)\n(.*?)```/gs, (match, lang, code) => {
-        return '```' + lang.trim() + '\n' + code.trim() + '\n```';
+      .replace(this.patterns.codeBlocks, (match, code) => {
+        return '\n\n```\n' + code.trim() + '\n```\n\n';
       })
-      // Inline kodas
-      .replace(/`([^`]+)`/g, (match, code) => {
-        return '`' + code.trim() + '`';
-      });
+      .replace(this.patterns.inlineCode, '`$1`');
   }
 
   handleEmphasis(text) {
-    return text
-      .replace(/\*\*(\*?[^*]+?\*?)\*\*/g, '**$1**')
-      .replace(/(\W|^)\*(\*?[^*\n]+?\*?)\*(\W|$)/g, '$1**$2**$3')
-      .replace(/(\W|^)_([^_\n]+?)_(\W|$)/g, '$1*$2*$3')
-      .replace(/(\W|^)"([^"\n]+?)"\*(\W|$)/g, '$1*"$2"*$3');
+    let result = text;
+    
+    // Strong emphasis
+    result = result
+      .replace(/\*\*([^*]+)\*\*/g, '**$1**')
+      .replace(/__([^_]+)__/g, '**$1**');
+    
+    // Regular emphasis
+    result = result
+      .replace(/\*([^*]+)\*/g, '_$1_')
+      .replace(/_([^_]+)_/g, '_$1_');
+    
+    return result;
   }
 
-  cleanWhitespace(text) {
+  normalizeParagraphs(text) {
     return text
-      .replace(/[ \t]+/g, ' ')           // Daugybinius tarpus → vienas tarpas
-      .replace(/ \n/g, '\n')             // Tarpai eilutės gale
-      .replace(/\n{3,}/g, '\n\n')        // 3+ tuščios eilutės → 2
-      .replace(/(\n[#>*-])/g, '\n\n$1')  // NAUJAS: tuščia eilutė prieš specialius elementus
+      // Pašaliname perteklinius tarpus
+      .split('\n')
+      .map(line => line.trim())
+      .join('\n')
+      // Tarpų tvarkymas
+      .replace(/[ \t]+/g, ' ')
+      .replace(/ \n/g, '\n')
+      // Paragrafų tarpai
+      .replace(/\n{3,}/g, '\n\n')
+      // Tuščios eilutės prieš specialius elementus
+      .replace(/(\n[#>*-])/g, '\n\n$1')
+      // Kodo blokų tvarkymas
+      .replace(/(```.*```)/gs, '\n\n$1\n\n')
       .trim();
   }
 }
