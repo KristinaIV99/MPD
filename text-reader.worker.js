@@ -1,6 +1,8 @@
+
 // text-reader.worker.js
 import { marked } from './vendor/marked.esm.js';
-import DOMPurify from './vendor/purify.es.mjs';
+import purify from './vendor/purify.es.mjs';
+const DOMPurify = purify(self);
 
 const activeJobs = new Map();
 
