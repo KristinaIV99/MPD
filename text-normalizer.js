@@ -9,9 +9,9 @@ export class TextNormalizer {
       blockquotes: /^>\s*(.+)$/gm,
       horizontalRules: /^(?:[-*_]\s*){3,}$/gm,
       codeBlocks: /```([^`]+)```/g,
-      inlineCode: /`([^`]+)`/g
+      inlineCode: /`([^`]+)`/g,
 	  enDash: /–/g,    // Trumpesnis brūkšnys (en dash)
-      quotes: /[""'']/g // Įvairūs kabutės
+      quotes: /[""'']/g, // Įvairūs kabutės
 	  mixedFormatting: /[*_]{1,3}(.+?)[*_]{1,3}/g
     };
   }
