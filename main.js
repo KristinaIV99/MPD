@@ -1,8 +1,13 @@
+console.log('TESTAS - main.js pradėjo veikti');
+console.warn('TESTAS - įspėjimo pranešimas');
+console.error('TESTAS - klaidos pranešimas');
+
 import { TextNormalizer } from './text-normalizer.js';
 import { TextReader } from './text-reader.js';
 
 class App {
   constructor() {
+    console.log('TESTAS - App klasė inicializuota');
     this.APP_NAME = '[App]';
     this.reader = new TextReader();
     
@@ -97,6 +102,7 @@ class App {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  console.debug('[Main] Initializing application...');
+  console.log('TESTAS - DOMContentLoaded įvyko');
   window.app = new App();
+  console.log('TESTAS - App sukurtas');
 });
