@@ -13,7 +13,7 @@ export class TextNormalizer {
       inlineCode: /`([^`]+)`/g,
 	  enDash: /–/g,    // Trumpesnis brūkšnys (en dash)
       quotes: /[""'']/g, // Įvairūs kabutės
-      longDash: /\*\*\*/g  // Naujas šablonas trims žvaigždutėms
+      longDash: /\*\*\*\*/g  // Naujas šablonas trims žvaigždutėms
     };
   }
   
