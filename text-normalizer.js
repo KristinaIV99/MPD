@@ -25,7 +25,7 @@ export class TextNormalizer {
       normalized = normalized.replace(this.patterns.longDash, '—');
       
       // 2. Sąrašai (su patterns)
-      normalized = normalized.replace(this.patterns.lists, '* ');
+      normalized = normalized.replace(this.patterns.lists, '- ');
 	  
       // 3. Pakeičiame * į _
       normalized = normalized.replace(/\*/g, '_');
