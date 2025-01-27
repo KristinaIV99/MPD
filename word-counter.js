@@ -20,10 +20,15 @@ export class WordCounter {
 
   _getWords(text) {
     const cleanText = this._cleanText(text);
-    return cleanText
+    const words = cleanText
       .split(' ')
-      .filter(word => word.length > 0)     // Pašaliname tuščius elementus
-      .filter(word => /[a-zA-Z]/.test(word)); // Paliekame tik žodžius su raidėmis
+      .filter(word => word.length > 0)
+      // Atnaujintas regex, kad įtrauktų švedų kalbos raides
+      .filter(word => /[a-zA-ZåäöÅÄÖ]/.test(word));
+
+    console.log(`${this.COUNTER_NAME} Pavyzdys žodžių:`, words.slice(0, 20));
+    
+    return words;
   }
 
   countWords(text) {
@@ -47,6 +52,13 @@ export class WordCounter {
     words.forEach(word => {
       wordFrequency[word] = (wordFrequency[word] || 0) + 1;
     });
+
+	const mostCommon = Object.entries(wordFrequency)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10);
+      
+    console.log(`${this.COUNTER_NAME} 10 vanligaste orden:`, // "10 dažniausių žodžių" švediškai
+      mostCommon.map(([word, count]) => `${word}: ${count}`));
 
     return {
       totalWords: words.length,
