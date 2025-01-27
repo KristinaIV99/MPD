@@ -1,3 +1,4 @@
+
 // word-counter.js
 export class WordCounter {
   constructor() {
@@ -40,23 +41,42 @@ export class WordCounter {
   }
 
   getWordStatistics(words) {
-    // Skaičiuojame žodžių pasikartojimus
     const wordFrequency = {};
+    
+    // Skaičiuojame kiekvieno žodžio pasikartojimus
     words.forEach(word => {
       wordFrequency[word] = (wordFrequency[word] || 0) + 1;
     });
 
-	const mostCommon = Object.entries(wordFrequency)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 10);
-      
-    console.log(`${this.COUNTER_NAME} 300 vanligaste orden:`, // "10 dažniausių žodžių" švediškai
-      mostCommon.map(([word, count]) => `${word}: ${count}`));
+    // Rūšiuojame visus žodžius pagal dažnumą
+    const sortedWords = Object.entries(wordFrequency)
+      .sort(([, a], [, b]) => b - a);
+    
+    // Spausdiname statistiką konsolėje
+    console.log(`\n${this.COUNTER_NAME} STATISTIKA:`);
+    console.log(`Iš viso žodžių: ${words.length}`);
+    console.log(`Unikalių žodžių: ${sortedWords.length}`);
+    
+    // Spausdiname dažniausiai pasitaikančius žodžius
+    console.log(`\n${this.COUNTER_NAME} 500 DAŽNIAUSIŲ ŽODŽIŲ:`);
+    console.log('Nr. | Žodis                | Kiek kartų');
+    console.log('-'.repeat(45));
+    sortedWords.slice(0, 500).forEach(([word, count], index) => {
+      console.log(`${(index + 1).toString().padStart(3, ' ')} | ${word.padEnd(20, ' ')} | ${count}`);
+    });
+
+    // Spausdiname visus unikalius žodžius
+    console.log(`\n${this.COUNTER_NAME} VISI UNIKALŪS ŽODŽIAI:`);
+    console.log('Nr. | Žodis');
+    console.log('-'.repeat(30));
+    sortedWords.forEach(([word], index) => {
+      console.log(`${(index + 1).toString().padStart(3, ' ')} | ${word}`);
+    });
 
     return {
       totalWords: words.length,
-      uniqueWords: Object.keys(wordFrequency).length,
-      mostCommon
+      uniqueWords: sortedWords.length,
+      mostCommon: sortedWords.slice(0, 500)
     };
   }
 }
