@@ -1,3 +1,5 @@
+import { TextNormalizer } from './text-normalizer.js';
+const normalizer = new TextNormalizer(logger);
 import { TextReader } from './text-reader.js';
 import Logger from './logger.js'
 import { LOG_LEVELS } from './logger.js'
