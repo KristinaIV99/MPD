@@ -11,10 +11,10 @@ export class TextNormalizer {
       
       // 1. Headers
       normalized = normalized.replace(/^#\s+(.*?)\s*#*$/gm, '# $1');
-      normalized = normalized.replace(/_{3,}/g, '_');  // Triple+ pabraukimai
+      normalized = normalized.replace(/_+/g, '_');  // Sutvarkome visus pabraukimus
 
       // 2. Citatos ir blokai
-      normalized = this.#normalizeQuotes(normalized);
+      normalized = this.normalizeQuotes(normalized);
       
       // 3. Specialūs simboliai
       normalized = normalized.replace(/[“”]/g, '"');
@@ -22,34 +22,34 @@ export class TextNormalizer {
       normalized = normalized.replace(/–/g, '-');
       
       // 4. Emphasis ir escape
-      normalized = this.#handleEmphasis(normalized);
+      normalized = this.handleEmphasis(normalized);
       
       // 5. Tarpai ir eilučių tarpai
-      normalized = this.#cleanWhitespace(normalized);
+      normalized = this.cleanWhitespace(normalized);
 
       this.logger.log('Markdown normalized successfully');
       return normalized;
     } catch (error) {
       this.logger.error(`Normalization failed: ${error.message}`);
-      return text; // Grąžina originalą jei klaida
+      return text;
     }
   }
 
-  // # Privatūs metodai
-  #normalizeQuotes(text) {
+  // Privatūs metodai (be # sintaksės)
+  normalizeQuotes(text) {
     return text
-      .replace(/(\n|^)\s*&/g, '\n>') // & -> blockquote
-      .replace(/(\n|^)>+/g, '\n>'); // Daugkartiniai >
+      .replace(/(\n|^)\s*&/g, '\n>')
+      .replace(/(\n|^)>+/g, '\n>');
   }
 
-  #handleEmphasis(text) {
+  handleEmphasis(text) {
     return text
-      .replace(/(\w)_(\w)/g, '$1\\_$2') // Escape vidinius _
-      .replace(/(^|\s)_([^_]+)_(\s|$)/g, '$1*$2*$3') // _italic_ -> *italic*
-      .replace(/\*\*(.*?)\*\*/g, '**$1**'); // Ensure bold consistency
+      .replace(/(\w)_(\w)/g, '$1\\_$2')
+      .replace(/(^|\s)_([^_]+?)_(\s|$)/g, '$1*$2*$3')
+      .replace(/\*\*(.*?)\*\*/g, '**$1**');
   }
 
-  #cleanWhitespace(text) {
+  cleanWhitespace(text) {
     return text
       .replace(/[ \t]+/g, ' ')
       .replace(/ \n/g, '\n')
@@ -57,8 +57,7 @@ export class TextNormalizer {
       .trim();
   }
 
-  // Galimybė pridėti kitus normalizatorius
   normalizePlainText(text) {
-    return this.normalizeMarkdown(text).replace(/[\*_>#]/g, '');
+    return this.normalizeMarkdown(text).replace(/[*_>#]/g, '');
   }
 }
