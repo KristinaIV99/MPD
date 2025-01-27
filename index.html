@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<!-- PWA Meta Tags -->
+    <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#2196f3">
-
     <title>Skaityk ir tobulėk</title>
     
-	<!-- Manifest and Icons -->
+    <!-- Manifest and Icons -->
     <link rel="manifest" href="./manifest.json">
     <link rel="stylesheet" href="./main.css">
-	<link rel="icon" href="./icons/favicon.ico" type="image/x-icon">
-
+    <link rel="icon" href="./icons/favicon.ico" type="image/x-icon">
     <!-- iOS palaikymas -->
     <link rel="apple-touch-icon" href="./icons/icon-192x192.png">
     <meta name="mobile-web-app-capable" content="yes">
@@ -23,19 +21,23 @@
         <input type="file" accept=".md" id="fileInput">
         <div id="content"></div>
     </div>
-
-    <script type="module" src="./logger.js"></script>
     <script type="module" src="./text-reader.js"></script>
-	<script type="module" src="text-normalizer.js"></script>
+    <script type="module" src="text-normalizer.js"></script>
     <script type="module" src="./main.js"></script>
     <script>
+        const APP_NAME = '[App]';
         // Service Worker registracija
         if ('serviceWorker' in navigator) {
+            console.debug(`${APP_NAME} Registruojamas Service Worker...`);
             navigator.serviceWorker.register('./sw.js')
                 .then(registration => {
-                    // console.log('SW registered'); // Užkomentuota žinutė
+                    console.debug(`${APP_NAME} Service Worker sėkmingai užregistruotas:`, registration.scope);
                 })
-                .catch(error => console.log('SW reg failed:', error));
+                .catch(error => {
+                    console.error(`${APP_NAME} Service Worker registracijos klaida:`, error);
+                });
+        } else {
+            console.warn(`${APP_NAME} Service Worker nepalaikomas šioje naršyklėje`);
         }
     </script>
 </body>
