@@ -1,4 +1,3 @@
-
 import { marked } from './vendor/marked.esm.js';
 import DOMPurify from './vendor/purify.es.mjs';
 import Logger from './logger.js';
@@ -130,7 +129,8 @@ export class TextReader {
   _initWorker() {
     if (typeof Worker !== 'undefined') {
       try {
-        this.worker = new Worker('./text-reader.worker.js', { 
+        this.worker = new Worker('https://kristinaiv99.github.io/MPD/text-reader.worker.js',
+  {
           type: 'module',
           name: 'textReaderWorker'
         });
