@@ -2,7 +2,7 @@ import Logger from './logger.js';
 import { LOG_LEVELS } from './logger.js';
 import TextNormalizer from './text-normalizer.js';
 
-export class TextReader {
+export default class TextReader {  // <--- Pakeista iš "export class"
   constructor(config = {}) {
     const defaultLogger = new Logger('TextReader');
     
