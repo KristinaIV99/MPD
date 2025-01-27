@@ -4,7 +4,7 @@ import purify from './vendor/purify.es.mjs';
 import Logger from './logger.js';
 
 const DOMPurify = purify(self);
-const logger = Logger('Worker');
+const logger = new Logger('Worker');
 const activeJobs = new Map();
 logger.debug('purify importuotas:', purify);
 logger.debug('DOMPurify inicializuotas:', DOMPurify);
