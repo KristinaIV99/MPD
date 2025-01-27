@@ -1,4 +1,3 @@
-
 import Logger from './logger.js';
 import { LOG_LEVELS } from './logger.js';
 
@@ -6,9 +5,11 @@ class TextNormalizer {  // <--- PRIDĖTI KLĖS DEKLARACIJĄ
   constructor(logger) {
     // Jei logger neperduotas, sukuriame naują
     this.logger = logger || new Logger('TextNormalizer', {
-        saveLevels: ['error', 'debug'],
-        bufferSize: 10
+      saveLevels: ['error', 'debug'],
+      bufferSize: 1,  // Sumažinkite buferį iki 1, kad iš karto matytumėte
+      logToConsole: true  // PRIDĖKITE, jei Logger klasėje trūksta šito
     });
+  }
     
     this.patterns = {
       emphasis: [/_([^_]+?)_/g, /(?<!\*)\*(?!\*)([^*]+?)\*(?!\*)/g],
