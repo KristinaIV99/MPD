@@ -133,3 +133,5 @@ class TextNormalizer {  // <--- PRIDĖTI KLĖS DEKLARACIJĄ
     return result;
   }
 }
+
+export default TextNormalizer;
