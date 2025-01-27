@@ -200,14 +200,12 @@ export class TextReader {
   }
 
   _dispatchProgress(file, loaded) {
-    const percent = Math.min(
-      Math.round((loaded / file.size) * 100),
-      100
-    );
-    
-    this.events.dispatchEvent(new CustomEvent('progress', {
-      detail: { percent, loaded, total: file.size }
-    }));
+      const percent = loaded >= file.size ? 100 : 
+          Math.round((loaded / file.size) * 100);
+      
+      this.events.dispatchEvent(new CustomEvent('progress', {
+          detail: { percent, loaded, total: file.size }
+      }));
   }
 
   abort() {
