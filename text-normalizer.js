@@ -12,7 +12,8 @@ export class TextNormalizer {
       inlineCode: /`([^`]+)`/g,
       enDash: /–/g,
       quotes: /["']/g,  // Sutvarkytas kabučių regex
-	  strongEmphasis: [/\*\*\*([^*]+?)\*\*\*/g]
+	  strongEmphasis: [/\*\*\*([^*]+?)\*\*\*/g],
+	  threeStars: /(?<![*\w])\*{3}(?![*\w])/g     // Pataisytas šablonas
     };
   }
 
@@ -67,11 +68,14 @@ export class TextNormalizer {
     let result = text;
     
 	// Pirma apdorojame trigubą formatavimą
-    result = result.replace(this.patterns.strongEmphasis, '***$1***');
+    result = result.replace(this.patterns.strongEmphasis, '___$1___');
 	  
+	  // Tada pavienius tris asteriskus į ilgą brūkšnį
+      result = result.replace(this.patterns.threeStars, '—');
+      
     // Stiprus formatavimas (**)
     this.patterns.strong.forEach(regex => {
-      result = result.replace(regex, '**$1**');
+      result = result.replace(regex, '__$1__');
     });
 
     // Paprastas formatavimas (_)
