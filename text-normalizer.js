@@ -1,5 +1,6 @@
 
 
+
 export class TextNormalizer {
   constructor(logger) {
     this.logger = logger;
@@ -14,7 +15,7 @@ export class TextNormalizer {
       inlineCode: /`([^`]+)`/g,
 	  enDash: /–/g,    // Trumpesnis brūkšnys (en dash)
       quotes: /[""'']/g, // Įvairūs kabutės
-      longDash: /\*\*\*/g  // Naujas šablonas trims žvaigždutėms
+      longDash: /\-\-\-/g  // 
     };
   }
   
@@ -28,7 +29,7 @@ export class TextNormalizer {
       // 2. Sąrašai (su patterns)
       normalized = normalized.replace(this.patterns.lists, '- ');
       
-      // 4. Pirma apdorojame tris žvaigždutes į ilgą brūkšnį
+      // 4. Pirma apdorojame tris brukšniukai į ilgą brūkšnį
       normalized = normalized.replace(this.patterns.longDash, '—');
       
       // 5. Horizontalios linijos (su patterns)
