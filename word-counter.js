@@ -7,14 +7,13 @@ export class WordCounter {
   _cleanText(text) {
     // Pašaliname visus skyrybos ženklus ir specialius simbolius
     const cleanText = text
-      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()«»\d]/g, ' ') // Pašaliname skyrybos ženklus ir skaičius
+      .replace(/[.,\/#!$%\^&\*;:{}=_`~()«»\d]/g, ' ') // Pašaliname skyrybos ženklus ir skaičius
       .replace(/\s+/g, ' ')                              // Pakeičiame visus tarpus į vieną tarpą
       .trim()                                            // Pašaliname tarpus pradžioje ir gale
       .toLowerCase();                                    // Konvertuojame į mažąsias raides
 
     // Parodome pavyzdį konsolėje debugginimui
     console.log(`${this.COUNTER_NAME} Teksto pavyzdys po valymo:`, cleanText.slice(0, 100));
-    
     return cleanText;
   }
 
@@ -27,22 +26,16 @@ export class WordCounter {
       .filter(word => /[a-zA-ZåäöÅÄÖ]/.test(word));
 
     console.log(`${this.COUNTER_NAME} Pavyzdys žodžių:`, words.slice(0, 20));
-    
     return words;
   }
 
   countWords(text) {
     const words = this._getWords(text);
-    
-    // Parodome pirmus kelis žodžius debugginimui
-    console.log(`${this.COUNTER_NAME} Pirmi 10 žodžių:`, words.slice(0, 10));
-    
     const count = words.length;
-    console.log(`${this.COUNTER_NAME} Suskaičiuota žodžių: ${count}`);
     
     return {
       totalWords: count,
-      words: words // Perduodame žodžių masyvą statistikai
+      words: words
     };
   }
 
@@ -63,9 +56,7 @@ export class WordCounter {
     return {
       totalWords: words.length,
       uniqueWords: Object.keys(wordFrequency).length,
-      mostCommon: Object.entries(wordFrequency)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 10)
+      mostCommon
     };
   }
 }
