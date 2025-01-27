@@ -7,19 +7,24 @@ export class TextNormalizer {
     try {
       let normalized = text;
       
-      // 1. Headers - tvarkome tik # kiekį pabaigoje
+      // 1. Horizontalios linijos (*** → ---)
+      normalized = normalized.replace(/^\s*\*\*\*\s*$/gm, '---');
+      
+      // 2. Headers
       normalized = normalized.replace(/^#+\s+(.*?)\s*#*$/gm, '# $1');
       
-      // 2. Citatos - normalizuojame į >
+      // 3. Citatos
       normalized = this.normalizeQuotes(normalized);
       
-      // 3. Specialūs simboliai
-      normalized = normalized.replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/–/g, '-');
+      // 4. Specialūs simboliai (paliekame ilgą brūkšnį "–")
+      normalized = normalized
+        .replace(/[“”]/g, '"')
+        .replace(/[‘’]/g, "'");
       
-      // 4. Emphasis - tvarkome pirmiausia
+      // 5. Emphasis su žvaigždutėmis ir pabraukimais
       normalized = this.handleEmphasis(normalized);
       
-      // 5. Tarpai
+      // 6. Tarpai
       normalized = this.cleanWhitespace(normalized);
 
       this.logger.log('Markdown normalized successfully');
@@ -31,18 +36,19 @@ export class TextNormalizer {
   }
 
   normalizeQuotes(text) {
-    return text.replace(/^(\s*)&/gm, '>') // Citatos iš &
-      .replace(/^>+/gm, '>'); // Perteklinius > pašaliname
+    return text
+      .replace(/^(\s*)&/gm, '>')
+      .replace(/^>+/gm, '>');
   }
 
   handleEmphasis(text) {
     return text
-      // Pirmiausia konvertuojame __bold__ į **bold**
-      .replace(/__([^_]+)__/g, '**$1**')
-      // Tada _emphasis_ su bet kokiais ribotais simboliais
-      .replace(/(\W|^)_([^_]+)_(\W|$)/g, '$1*$2*$3')
-      // Escape'iname likusius _ ženklus žodžiuose
-      .replace(/(\w)_(\w)/g, '$1\\_$2');
+      // Konvertuojame **storą tekstą** ir *pasvirąjį*
+      .replace(/\*\*(\*?[^*]+?\*?)\*\*/g, '**$1**') // Išlaikome vidinius žvaigždutes
+      .replace(/(\W|^)\*(\*?[^*\n]+?\*?)\*(\W|$)/g, '$1**$2**$3') // Storas tekstas su *
+      .replace(/(\W|^)_([^_\n]+?)_(\W|$)/g, '$1*$2*$3') // Pasvirasis su _
+      // Tvarkome "ni?\!*" → "*ni?\!*"
+      .replace(/(\W|^)"([^"\n]+?)"\*(\W|$)/g, '$1*"$2"*$3');
   }
 
   cleanWhitespace(text) {
@@ -51,9 +57,5 @@ export class TextNormalizer {
       .replace(/ \n/g, '\n')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
-  }
-
-  normalizePlainText(text) {
-    return this.normalizeMarkdown(text).replace(/[*_>#]/g, '');
   }
 }
