@@ -1,3 +1,4 @@
+
 import { TextNormalizer } from './text-normalizer.js'; 
 
 export class TextReader {
@@ -5,8 +6,8 @@ export class TextReader {
     this.READER_NAME = '[TextReader]';
     
     this.config = {
-      chunkSize: 1024 * 1024,
-      maxFileSize: 100 * 1024 * 1024,
+      chunkSize: 512 * 1024,         // Sumažiname iki 512KB (buvo 1MB)
+      maxFileSize: 100 * 1024 * 1024, // Paliekame 100MB
       allowedTypes: [
         'text/markdown',
         'text/plain',
@@ -15,7 +16,7 @@ export class TextReader {
       encoding: 'utf-8',
       maxRetries: 3,
       workerEnabled: true,
-      chunkOverlap: 1024,
+      chunkOverlap: 512,             // Sumažiname overlap (buvo 1024)
       ...config
     };
 
