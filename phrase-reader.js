@@ -1,3 +1,4 @@
+
 import { TextNormalizer } from './text-normalizer.js';
 
 export class PhraseReader {
@@ -117,13 +118,15 @@ export class PhraseReader {
             
             // Jei frazėje yra skandinaviškų raidžių, naudojame specialią paiešką
             if (this.hasScandinavianLetters(searchPhrase)) {
-                const regexPattern = this.escapeRegExp(searchPhrase);
-                const regex = new RegExp(regexPattern, 'gi');
-                console.log(`${this.READER_NAME} Ieškoma skandinaviška frazė:`, {
-                    originali: phrase,
-                    regex: regexPattern,
-                    kodavimas: Array.from(searchPhrase).map(c => `${c}:${c.charCodeAt(0)}`)
-                });
+				// Tiesioginis palyginimas be regex
+				let position = -1;
+				while ((position = searchText.indexOf(searchPhrase, position + 1)) !== -1) {
+					console.log(`${this.READER_NAME} Rasta skandinaviška frazė pozicijoje ${position}:`, {
+						tekstas: searchText.substring(position, position + searchPhrase.length),
+						originali: searchPhrase,
+						kodai: Array.from(searchText.substring(position, position + searchPhrase.length))
+							.map(c => `${c}:${c.charCodeAt(0)}`)
+					});
 
                 let match;
                 while ((match = regex.exec(searchText)) !== null) {
