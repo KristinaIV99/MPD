@@ -4,7 +4,7 @@
 class TextNormalizer {
   constructor(options = {}) {
     this.NORMALIZER_NAME = options.name || '[TextNormalizer]';
-    this.debug = options.debug || false;
+    this.debug = options.debug !== false; // Defaulting to true
     
     this.patterns = {
       emphasis: [/_([^_]+?)_/g, /(?<!\*)\*(?!\*)([^*]+?)\*(?!\*)/g],
@@ -31,15 +31,13 @@ class TextNormalizer {
     };
   }
 
-  log(message) {
-    if (this.debug) {
-      console.debug(`${this.NORMALIZER_NAME} ${message}`);
-    }
+  log(message, text = '') {
+    console.debug(`${this.NORMALIZER_NAME} ${message}${text ? '\n' + text : ''}`);
   }
 
   normalizeMarkdown(text) {
     try {
-      this.log('=== normalizeMarkdown START ===\nOriginal text: ' + text);
+      this.log('=== normalizeMarkdown START ===', text);
       
       if (!text || typeof text !== 'string') {
         throw new Error('Invalid input: text must be a non-empty string');
@@ -57,7 +55,7 @@ class TextNormalizer {
       normalized = this.handleSpecialSymbols(normalized);
       normalized = this.handleImages(normalized);
       
-      this.log('=== normalizeMarkdown END ===\nFinal text: ' + normalized);
+      this.log('=== normalizeMarkdown END ===', normalized);
       return normalized;
     } catch (error) {
       console.error(`${this.NORMALIZER_NAME} Normalization failed: ${error.message}`);
@@ -66,7 +64,7 @@ class TextNormalizer {
   }
 
   handleHtmlContent(text) {
-    this.log('Processing HTML content');
+    this.log('=== handleHtmlContent START ===', text);
     
     // Išsaugome HTML nuorodų tekstą
     let processed = text.replace(this.patterns.htmlLinks, '$1');
@@ -78,11 +76,12 @@ class TextNormalizer {
     // Pašaliname likusias HTML žymes
     processed = processed.replace(this.patterns.htmlTags, '');
     
+    this.log('=== handleHtmlContent END ===', processed);
     return processed;
   }
 
   removeUnwantedElements(text) {
-    this.log('Removing unwanted elements');
+    this.log('=== removeUnwantedElements START ===', text);
     
     let cleaned = text
       .replace(this.patterns.markdownLinks, '$1')
@@ -93,11 +92,12 @@ class TextNormalizer {
       .map(line => line.trim())
       .join('\n');
       
+    this.log('=== removeUnwantedElements END ===', cleaned);
     return cleaned;
   }
 
   handleHeaders(text) {
-    this.log('=== handleHeaders START ===');
+    this.log('=== handleHeaders START ===', text);
     
     // Apdorojame chapter title
     let result = text.replace(this.patterns.chapterTitle, '# $1\n\n');
@@ -105,12 +105,12 @@ class TextNormalizer {
     // Apdorojame visus kitus headers
     result = result.replace(this.patterns.headers, '$1 $2\n\n');
     
-    this.log('=== handleHeaders END ===');
+    this.log('=== handleHeaders END ===', result);
     return result;
   }
   
   handleParagraphsAndSpacing(text) {
-    this.log('Processing paragraphs and spacing');
+    this.log('=== handleParagraphsAndSpacing START ===', text);
     
     let result = text
       // Tvarkome paragrafus
@@ -123,50 +123,71 @@ class TextNormalizer {
       .replace(/\n{3,}/g, '\n\n')
       .trim();
     
+    this.log('=== handleParagraphsAndSpacing END ===', result);
     return result;
   }
 
   handleImages(text) {
-    this.log('Processing images');
+    this.log('=== handleImages START ===', text);
     
-    return text
+    let result = text
       // Išsaugome markdown paveikslėlių alt tekstą
       .replace(this.patterns.images, '$1')
       // Pašaliname HTML paveikslėlius (jei liko)
       .replace(this.patterns.htmlImages, '');
+      
+    this.log('=== handleImages END ===', result);
+    return result;
   }
 
   processBasicElements(text) {
-    this.log('Processing basic elements');
-    return text
+    this.log('=== processBasicElements START ===', text);
+    
+    let result = text
       .replace(this.patterns.lists, '* ')
       .replace(this.patterns.horizontalRules, '—');
+      
+    this.log('=== processBasicElements END ===', result);
+    return result;
   }
 
   handleSpecialSymbols(text) {
-    this.log('Processing special symbols');
-    return text
+    this.log('=== handleSpecialSymbols START ===', text);
+    
+    let result = text
       .replace(this.patterns.quotes, '"')
       .replace(this.patterns.enDash, '-')
       .replace(/\.{3}/g, '…');
+      
+    this.log('=== handleSpecialSymbols END ===', result);
+    return result;
   }
 
   normalizeQuotes(text) {
-    this.log('Normalizing quotes');
-    return text
+    this.log('=== normalizeQuotes START ===', text);
+    
+    let result = text
       .replace(/^(\s*)(?:&|>+)/gm, '>')
       .replace(this.patterns.blockquotes, '> $1');
+      
+    this.log('=== normalizeQuotes END ===', result);
+    return result;
   }
 
   normalizeCodeBlocks(text) {
-    this.log('Normalizing code blocks');
-    return text
+    this.log('=== normalizeCodeBlocks START ===', text);
+    
+    let result = text
       .replace(this.patterns.codeBlocks, (_, code) => `\n\n\`\`\`\n${code.trim()}\n\`\`\`\n\n`)
       .replace(this.patterns.inlineCode, '`$1`');
+      
+    this.log('=== normalizeCodeBlocks END ===', result);
+    return result;
   }
 
   handleEmphasis(text) {
-    this.log('Processing emphasis');
+    this.log('=== handleEmphasis START ===', text);
+    
     let result = text;
     
     // Stiprus pabrėžimas
@@ -182,6 +203,7 @@ class TextNormalizer {
       result = result.replace(regex, '_$1_');
     });
     
+    this.log('=== handleEmphasis END ===', result);
     return result;
   }
 }
