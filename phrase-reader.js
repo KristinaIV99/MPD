@@ -54,10 +54,14 @@ export class PhraseReader {
     }
 
     createScandinavianRegex(phrase) {
+        // Sukuriame regex šabloną su alternatyvomis kiekvienai raidei
         const regexPattern = phrase.toLowerCase()
-            .replace(/å/g, '[åa]')
-            .replace(/ä/g, '[äa]')
-            .replace(/ö/g, '[öo]');
+            .replace(/å/g, '(å|a)')
+            .replace(/ä/g, '(ä|a)')
+            .replace(/ö/g, '(ö|o)');
+            
+        console.log(`${this.READER_NAME} Sukurtas regex šablonas frazei "${phrase}":`, regexPattern);
+        
         return {
             originali: phrase,
             regex: regexPattern,
@@ -103,6 +107,14 @@ export class PhraseReader {
         console.time('phraseSearch');
         const foundPhrases = [];
         const searchText = text.toLowerCase();
+        
+        // Debug: patikriname tekstą dėl skandinaviškų raidžių
+        const hasScandLetters = this.hasScandinavianLetters(searchText);
+        console.log(`${this.READER_NAME} Ar tekste yra skandinaviškų raidžių:`, hasScandLetters);
+        if (hasScandLetters) {
+            console.log(`${this.READER_NAME} Skandinaviškos raidės tekste:`, 
+                searchText.match(/[åäöÅÄÖ]/g)
+            );
 
         if (this.debug) {
             console.log(`${this.READER_NAME} Teksto pavyzdys (pirmi 100 simboliai):`, searchText.substring(0, 100));
@@ -111,11 +123,23 @@ export class PhraseReader {
         for (const [phrase, metadata] of this.phrasesMap) {
             if (metadata.hasScandinavian) {
                 // Naudojame regex paiešką skandinaviškoms frazėms
-                const pattern = `\\b${metadata.scanRegex.regex}\\b`;
-                const regex = new RegExp(pattern, 'gi');
-                let match;
-                
-                while ((match = regex.exec(searchText)) !== null) {
+                try {
+                    console.log(`${this.READER_NAME} Ieškoma skandinaviška frazė:`, {
+                        originali: phrase,
+                        regex: metadata.scanRegex.regex,
+                        kodavimas: metadata.scanRegex.kodavimas
+                    });
+                    
+                    const pattern = metadata.scanRegex.regex;
+                    const regex = new RegExp(pattern, 'gi');
+                    let match;
+                    
+                    while ((match = regex.exec(searchText)) !== null) {
+                        console.log(`${this.READER_NAME} Rasta atitiktis:`, {
+                            rastas_tekstas: match[0],
+                            pozicija: match.index,
+                            kontekstas: searchText.substr(Math.max(0, match.index - 20), 40)
+                        });
                     foundPhrases.push({
                         text: phrase,
                         start: match.index,
