@@ -52,13 +52,13 @@ class App {
       
       // Skaičiuojame žodžius ir gauname statistiką
       console.log(`${this.APP_NAME} Pradedamas žodžių skaičiavimas`);
-      const result = await this.counter.countWords(text);
-      const stats = await this.counter.getWordStatistics(result.words);
-      console.log(`${this.APP_NAME} Žodžių suskaičiuota:`, result.totalWords);
+      const wordCount = this.counter.countWords(text);
+      const stats = this.counter.getWordStatistics(wordCount.words);
+      console.log(`${this.APP_NAME} Žodžių suskaičiuota:`, wordCount.totalWords);
       console.log(`${this.APP_NAME} Statistika:`, stats);
-      
+
       // Atnaujiname UI
-      this.updateWordCount(result, stats);
+      this.updateWordCount(wordCount, stats);
       
       this.setContent(text);
       console.log(`${this.APP_NAME} Teksto turinys sėkmingai įkeltas`);
@@ -75,21 +75,21 @@ class App {
   }
 
   updateWordCount(count, stats) {
-      // Išvalome seną turinį
-      this.wordCount.textContent = '';
-      
-      // Sukuriame ir pridedame žodžių skaičiaus elementą
-      const totalWords = document.createElement('div');
-      totalWords.textContent = `Žodžių skaičius: ${count.totalWords}`;
-      this.wordCount.appendChild(totalWords);
-      
-      // Sukuriame ir pridedame unikalių žodžių elementą
-      const uniqueWords = document.createElement('div');
-      uniqueWords.textContent = `Unikalių žodžių: ${stats.uniqueWords}`;
-      this.wordCount.appendChild(uniqueWords);
-      
-      console.log(`${this.APP_NAME} Atnaujintas žodžių skaičius:`, count.totalWords);
-    }
+    // Išvalome seną turinį
+    this.wordCount.textContent = '';
+    
+    // Sukuriame ir pridedame žodžių skaičiaus elementą
+    const totalWords = document.createElement('div');
+    totalWords.textContent = `Žodžių skaičius: ${count.totalWords}`;
+    this.wordCount.appendChild(totalWords);
+    
+    // Sukuriame ir pridedame unikalių žodžių elementą
+    const uniqueWords = document.createElement('div');
+    uniqueWords.textContent = `Unikalių žodžių: ${stats.uniqueWords}`;
+    this.wordCount.appendChild(uniqueWords);
+    
+    console.log(`${this.APP_NAME} Atnaujintas žodžių skaičius:`, count.totalWords);
+  }
 
   setContent(text) {
     const div = document.createElement('div');
@@ -106,9 +106,12 @@ class App {
   }
 
   updateProgress({ percent }) {
+    this.progressBar.style.transition = 'width 0.3s ease'; // Pridedame sklandų perėjimą
     this.progressBar.style.width = `${percent}%`;
-    if(percent >= 100) {
+    
+    if (percent >= 100) {
       setTimeout(() => {
+        this.progressBar.style.transition = 'none'; // Išjungiam perėjimą resetui
         this.progressBar.style.width = '0%';
       }, 500);
     }
