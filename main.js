@@ -103,7 +103,7 @@ class App {
     console.log(`${this.APP_NAME} Atnaujintas žodžių skaičius:`, count.totalWords);
   }
 
-  setContent(text) {
+  setContent(text, phrases = []) {  
     const div = document.createElement('div');
     div.className = 'text-content';
     div.textContent = text;
