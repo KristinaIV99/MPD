@@ -1,8 +1,22 @@
-
 // word-counter.js
 export class WordCounter {
   constructor() {
     this.COUNTER_NAME = '[WordCounter]';
+  }
+    // Nustatome chunk dydį pagal įrenginį
+    if (window.navigator.userAgent.toLowerCase().includes('mobile')) {
+      this.CHUNK_SIZE = 100000;  // 100KB telefonams
+      this.BATCH_SIZE = 5000;
+      console.log(`${this.COUNTER_NAME} Nustatytas telefono režimas`);
+    } else if (window.navigator.userAgent.toLowerCase().includes('tablet')) {
+      this.CHUNK_SIZE = 500000;  // 500KB planšetėms
+      this.BATCH_SIZE = 10000;
+      console.log(`${this.COUNTER_NAME} Nustatytas planšetės režimas`);
+    } else {
+      this.CHUNK_SIZE = 1000000; // 1MB kompiuteriams
+      this.BATCH_SIZE = 20000;
+      console.log(`${this.COUNTER_NAME} Nustatytas kompiuterio režimas`);
+    }
   }
 
   _cleanText(text) {
@@ -36,11 +50,8 @@ export class WordCounter {
         .split(' ')
         .filter(word => word.length > 0)
         .filter(word => /^[a-zA-ZåäöÅÄÖéèêëîïûüÿçÉÈÊËÎÏÛÜŸÇ]+(-[a-zA-ZåäöÅÄÖéèêëîïûüÿçÉÈÊËÎÏÛÜŸÇ]+)*('?[a-zA-ZåäöÅÄÖéèêëîïûüÿçÉÈÊËÎÏÛÜŸÇ]*)*$/.test(word));
-
-      console.log(`${this.COUNTER_NAME} Rasta žodžių:`, words.length);
-      console.log(`${this.COUNTER_NAME} Pirmi 20 žodžių:`, words.slice(0, 20));
-      console.log(`${this.COUNTER_NAME} Paskutiniai 20 žodžių:`, words.slice(-20));
       
+      console.log(`${this.COUNTER_NAME} Rasta žodžių šioje dalyje:`, words.length);
       return words;
     } catch (error) {
       console.error(`${this.COUNTER_NAME} Klaida gaunant žodžius:`, error);
@@ -48,30 +59,29 @@ export class WordCounter {
     }
   }
 
-  countWords(text) {
+  async countWords(text) {
     try {
       console.log(`${this.COUNTER_NAME} Pradedamas žodžių skaičiavimas tekstui, ilgis:`, text.length);
-      
-      // Skaidome tekstą į mažesnes dalis jei jis per didelis
-      const CHUNK_SIZE = 500000; // ~500KB teksto
       let totalWords = [];
       
-      if (text.length > CHUNK_SIZE) {
-        console.log(`${this.COUNTER_NAME} Tekstas didelis, skaidome į dalis`);
+      if (text.length > this.CHUNK_SIZE) {
+        console.log(`${this.COUNTER_NAME} Tekstas didelis, skaidome į dalis po ${this.CHUNK_SIZE/1024}KB`);
         
-        // Skaidome tekstą į dalis
-        for (let i = 0; i < text.length; i += CHUNK_SIZE) {
-          const chunk = text.slice(i, i + CHUNK_SIZE);
+        for (let i = 0; i < text.length; i += this.CHUNK_SIZE) {
+          const chunk = text.slice(i, Math.min(i + this.CHUNK_SIZE, text.length));
           const chunkWords = this._getWords(chunk);
           totalWords = totalWords.concat(chunkWords);
-          console.log(`${this.COUNTER_NAME} Apdorota ${Math.round((i + CHUNK_SIZE) / text.length * 100)}%`);
+          
+          const progress = Math.min(100, Math.round((i + this.CHUNK_SIZE) / text.length * 100));
+          console.log(`${this.COUNTER_NAME} Apdorota ${progress}%`);
+          
+          // Trumpa pauzė tarp chunk'ų
+          await new Promise(resolve => setTimeout(resolve, 0));
         }
       } else {
         totalWords = this._getWords(text);
       }
 
-      console.log(`${this.COUNTER_NAME} Baigtas skaičiavimas, rasta žodžių:`, totalWords.length);
-      
       return {
         totalWords: totalWords.length,
         words: totalWords
@@ -85,24 +95,16 @@ export class WordCounter {
   getWordStatistics(words) {
     try {
       const wordFrequency = {};
-      let processed = 0;
-      const total = words.length;
       
-      // Apdorojame žodžius dalimis
-      const BATCH_SIZE = 10000;
-      for (let i = 0; i < words.length; i += BATCH_SIZE) {
-        const batch = words.slice(i, i + BATCH_SIZE);
-        batch.forEach(word => {
-          wordFrequency[word] = (wordFrequency[word] || 0) + 1;
-        });
-        processed += batch.length;
-        console.log(`${this.COUNTER_NAME} Statistika: ${Math.round(processed/total * 100)}%`);
-      }
+      // Skaičiuojame kiekvieno žodžio pasikartojimus
+      words.forEach(word => {
+        wordFrequency[word] = (wordFrequency[word] || 0) + 1;
+      });
 
       const sortedWords = Object.entries(wordFrequency)
         .sort(([, a], [, b]) => b - a);
 
-      // Spausdiname statistiką konsolėje
+      // Spausdiname statistiką
       console.log(`\n${this.COUNTER_NAME} STATISTIKA:`);
       console.log(`Iš viso žodžių: ${words.length}`);
       console.log(`Unikalių žodžių: ${sortedWords.length}`);
