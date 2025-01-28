@@ -7,6 +7,7 @@ class TextNormalizer {
     this.debug = options.debug !== false; // Defaulting to true
     
     this.patterns = {
+      sectionBreak: /^&\s*$/gm,
       emphasis: [/_([^_]+?)_/g, /(?<!\*)\*(?!\*)([^*]+?)\*(?!\*)/g],
       strong: [/__([^_]+?)__/g, /\*\*([^*]+?)\*\*/g],
       headers: /^(#{1,6})\s*(.+)$/gm,
@@ -33,6 +34,15 @@ class TextNormalizer {
 
   log(message, text = '') {
     console.debug(`${this.NORMALIZER_NAME} ${message}${text ? '\n' + text : ''}`);
+  }
+
+  handleSectionBreaks(text) {
+    this.log('=== handleSectionBreaks START ===', text);
+    
+    let result = text.replace(this.patterns.sectionBreak, '\n\n');  // Pridedame vieną tuščią eilutę
+    
+    this.log('=== handleSectionBreaks END ===', result);
+    return result;
   }
 
   normalizeMarkdown(text) {
