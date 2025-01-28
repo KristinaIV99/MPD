@@ -109,9 +109,9 @@ class App {
     const div = document.createElement('div');
     div.className = 'text-content';
     
-    // Pažymime frazes tekste naudodami highlighter
-    const highlightedText = this.highlighter.highlightPhrases(text, phrases);
-    div.innerHTML = highlightedText;  // Pakeičiame textContent į innerHTML
+    // Pažymime frazes su specialiais žymekliais
+    const markedText = this.highlighter.markPhrases(text, phrases);
+    div.textContent = markedText;
     
     // Jei yra rastų frazių, išvedame jas į konsolę
     if (phrases.length > 0) {
