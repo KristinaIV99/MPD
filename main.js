@@ -111,6 +111,10 @@ class App {
     
     // Pažymime frazes su specialiais žymekliais
     const markedText = this.highlighter.markPhrases(text, phrases);
+    
+    // Patikriname ar žymekliai pridėti
+    console.log('Pažymėtas tekstas:', markedText);
+    
     div.textContent = markedText;
     
     // Jei yra rastų frazių, išvedame jas į konsolę
