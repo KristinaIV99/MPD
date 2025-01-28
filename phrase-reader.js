@@ -68,6 +68,21 @@ export class PhraseReader {
             })
             .sort(([a], [b]) => b.length - a.length);
 
+        // Normalizuojame frazes prieš įdėdami į Map
+        for (const [key, value] of sortedPhrases) {
+            const normalizedKey = key.normalize('NFC');
+            console.log(`${this.READER_NAME} Frazė normalizuojama:`, {
+                original: key,
+                normalized: normalizedKey,
+                kodavimas: Array.from(normalizedKey).map(c => `${c}:${c.charCodeAt(0)}`)
+            });
+            this.phrasesMap.set(normalizedKey, {
+                ...value,
+                length: normalizedKey.length,
+                words: normalizedKey.toLowerCase().split(/\s+/).length
+            });
+        }
+
         // Sukuriame Map su preliminariai apdorotomis frazėmis
         for (const [key, value] of sortedPhrases) {
             this.phrasesMap.set(key.toLowerCase(), {
