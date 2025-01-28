@@ -39,7 +39,7 @@ class TextNormalizer {
   handleSectionBreaks(text) {
     this.log('=== handleSectionBreaks START ===', text);
     
-    let result = text.replace(this.patterns.sectionBreak, '\n\n');  // Pridedame vieną tuščią eilutę
+    let result = text.replace(/^[&][ \t]*$/gm, '§SECTION_BREAK§');
     
     this.log('=== handleSectionBreaks END ===', result);
     return result;
@@ -125,13 +125,13 @@ class TextNormalizer {
     
     let result = text
       // Tvarkome paragrafus
+      // Pakeičiame sekcijų skirtukus į tuščias eilutes
+      .replace(/§SECTION_BREAK§/g, '\n\n\n')
       .replace(this.patterns.paragraphs, '$1\n\n$2')
       // Tvarkome blockquotes
       .replace(/^>\s*(.+)$/gm, '> $1\n\n')
-      // Tvarkome tuščias eilutes
-      .replace(this.patterns.emptyLines, '\n\n')
-      // Pašaliname perteklinius tarpus tarp paragrafų
-      .replace(/\n{3,}/g, '\n\n')
+      // Tvarkome tuščias eilutes, bet paliekame trigubas
+      .replace(/\n{4,}/g, '\n\n\n')
       .trim();
     
     this.log('=== handleParagraphsAndSpacing END ===', result);
