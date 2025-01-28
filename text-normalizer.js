@@ -1,3 +1,4 @@
+
 class TextNormalizer {
   constructor() {
     this.NORMALIZER_NAME = '[TextNormalizer]';
@@ -19,11 +20,11 @@ class TextNormalizer {
       paragraphs: /([^\n])\n([^\n])/g,
       images: /!\[([^\]]*)\]\([^)]+\)/g,                     // Markdown paveiksliukai
       htmlImages: /<img[^>]+>/g,                             // HTML paveiksliukai
-      internalLinks: /\[\[([^\]]+)\]\]/g,                    // [[vidines-nuorodos]]
+      markdownLinks: /\[([^\]]+)\]\([^\)]+\)/g,                    // [[vidines-nuorodos]]
       htmlLinks: /<a[^>]*>([^<]*)<\/a>/g,                   // HTML nuorodos
       localPaths: /(?:\.\.?\/)*[a-zA-Z0-9_-]+\/[a-zA-Z0-9_\/-]+\.[a-zA-Z0-9]+/g, // Lokalūs keliai
       htmlTags: /<[^>]+>/g,                                  // Visos HTML žymės
-      urls: /(https?:\/\/[^\s]+)/g                          // HTTP/HTTPS nuorodos
+      bareUrls: /(?:https?:\/\/)[^\s)]+/g                          // HTTP/HTTPS nuorodos
     };
   }
 
@@ -52,23 +53,20 @@ class TextNormalizer {
   removeUnwantedElements(text) {
     console.debug(`${this.NORMALIZER_NAME} Removing unwanted elements`);
     
-    return text
-      // Šaliname Markdown paveiksliukus
-      .replace(this.patterns.images, '')
-      // Šaliname HTML paveiksliukus
-      .replace(this.patterns.htmlImages, '')
-      // Šaliname vidines nuorodas
-      .replace(this.patterns.internalLinks, '$1')
-      // Paliekame tik HTML nuorodų tekstą
-      .replace(this.patterns.htmlLinks, '$1')
-      // Šaliname lokalius kelius
+    let cleaned = text
+      // Išsaugome markdown nuorodų tekstą, bet pašaliname nuorodas
+      .replace(this.patterns.markdownLinks, '$1')
+      // Pašaliname URL adresus
+      .replace(this.patterns.bareUrls, '')
+      // Pašaliname lokalius kelius
       .replace(this.patterns.localPaths, '')
-      // Šaliname URL
-      .replace(this.patterns.urls, '')
-      // Šaliname likusias HTML žymes
-      .replace(this.patterns.htmlTags, '')
-      // Sutvarkome likusius tarpus
-      .replace(/\s+/g, ' ');
+      // Sutvarkome tarpus, bet išsaugome paragrafus
+      .replace(/[ \t]+/g, ' ')  // Tik horizontalūs tarpai
+      .split('\n')              // Skaidome į eilutes
+      .map(line => line.trim()) // Valome kiekvienos eilutės kraštus
+      .join('\n');             // Sujungiame atgal su naujų eilučių simboliais
+      
+    return cleaned;
   }
 
   handleHeaders(text) {
