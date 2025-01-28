@@ -115,6 +115,75 @@ export class PhraseReader {
             console.log(`${this.READER_NAME} Skandinaviškos raidės tekste:`, 
                 searchText.match(/[åäöÅÄÖ]/g)
             );
+        }
+
+        // Einame per visas frazes žodyne
+        for (const [phrase, metadata] of this.phrasesMap) {
+            if (metadata.hasScandinavian) {
+                // Naudojame regex paiešką skandinaviškoms frazėms
+                try {
+                    console.log(`${this.READER_NAME} Ieškoma skandinaviška frazė:`, {
+                        originali: phrase,
+                        regex: metadata.scanRegex.regex,
+                        kodavimas: metadata.scanRegex.kodavimas
+                    });
+                    
+                    const pattern = metadata.scanRegex.regex;
+                    const regex = new RegExp(pattern, 'gi');
+                    let match;
+                    
+                    while ((match = regex.exec(searchText)) !== null) {
+                        console.log(`${this.READER_NAME} Rasta atitiktis:`, {
+                            rastas_tekstas: match[0],
+                            pozicija: match.index,
+                            kontekstas: searchText.substr(Math.max(0, match.index - 20), 40)
+                        });
+                        
+                        foundPhrases.push({
+                            text: phrase,
+                            start: match.index,
+                            end: match.index + match[0].length,
+                            type: metadata['kalbos dalis'],
+                            cerf: metadata.CERF,
+                            translation: metadata.vertimas
+                        });
+                    }
+                } catch (error) {
+                    console.error(`${this.READER_NAME} Klaida ieškant skandinaviškos frazės "${phrase}":`, error);
+                }
+            } else {
+                // Įprasta paieška ne-skandinaviškoms frazėms
+                const searchPhrase = phrase.toLowerCase();
+                let position = -1;
+                
+                while ((position = searchText.indexOf(searchPhrase, position + 1)) !== -1) {
+                    // Tikriname žodžių ribas
+                    const beforeChar = position > 0 ? searchText[position - 1] : ' ';
+                    const afterChar = position + searchPhrase.length < searchText.length ? 
+                        searchText[position + searchPhrase.length] : ' ';
+                        
+                    if (this.isWordBoundary(beforeChar) && this.isWordBoundary(afterChar)) {
+                        foundPhrases.push({
+                            text: phrase,
+                            start: position,
+                            end: position + searchPhrase.length,
+                            type: metadata['kalbos dalis'],
+                            cerf: metadata.CERF,
+                            translation: metadata.vertimas
+                        });
+                    }
+                }
+            }
+        }
+
+        foundPhrases.sort((a, b) => a.start - b.start);
+        console.timeEnd('phraseSearch');
+        
+        if (this.debug) {
+            console.log(`${this.READER_NAME} Rasta frazių:`, foundPhrases.length);
+        }
+        
+        return foundPhrases;
 
         if (this.debug) {
             console.log(`${this.READER_NAME} Teksto pavyzdys (pirmi 100 simboliai):`, searchText.substring(0, 100));
