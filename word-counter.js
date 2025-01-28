@@ -6,20 +6,21 @@ export class WordCounter {
   }
 
   _cleanText(text) {
-    // Patikriname teksto ilgį prieš apdorojimą
-    console.log(`${this.COUNTER_NAME} Gautas tekstas, ilgis:`, text.length);
-    
-    // Pašaliname visus skyrybos ženklus ir specialius simbolius
-    const cleanText = text
-      .replace(/["""«»]/g, ' ')                          // Pašaliname kabutes (", ", «, »)
-      .replace(/[?!…]/g, ' ')                            // Pašaliname klaustuką, šauktuką, daugtaškį
-      .replace(/[.,;:{}=()\[\]\/\\@#$%^&*+~`|]/g, ' ')   // Pašaliname kablelius ir kitus skyrybos ženklus, išskyrus brūkšnelį tarp žodžių
-      .replace(/[.,\/#!$%\^&\*;:{}=_`~()«»\d]/g, ' ')    // Pašaliname skyrybos ženklus ir skaičius
-      .replace(/\s+/g, ' ')                              // Pakeičiame visus tarpus į vieną tarpą
-      .trim()                                            // Pašaliname tarpus pradžioje ir gale
-      .toLowerCase();                                    // Konvertuojame į mažąsias raides
+    try { // PRIDĖTA: try bloko pradžia
+      // Patikriname teksto ilgį prieš apdorojimą
+      console.log(`${this.COUNTER_NAME} Gautas tekstas, ilgis:`, text.length);
+      
+      // Pašaliname visus skyrybos ženklus ir specialius simbolius
+      const cleanText = text
+        .replace(/["""«»]/g, ' ')                          
+        .replace(/[?!…]/g, ' ')                            
+        .replace(/[.,;:{}=()\[\]\/\\@#$%^&*+~`|]/g, ' ')   
+        .replace(/[.,\/#!$%\^&\*;:{}=_`~()«»\d]/g, ' ')    
+        .replace(/\s+/g, ' ')                              
+        .trim()                                            
+        .toLowerCase();                                    
 
-    // Parodome pavyzdį konsolėje debugginimui
+      // Parodome pavyzdį konsolėje debugginimui
       console.log(`${this.COUNTER_NAME} Teksto pavyzdys po valymo:`, cleanText.slice(0, 100));
       return cleanText;
     } catch (error) {
