@@ -4,19 +4,34 @@ export class PhraseReader {
     constructor(options = {}) {
         this.READER_NAME = '[PhraseReader]';
         this.phrases = null;
+        this.phrasesMap = new Map(); // Optimizuota duomenų struktūra
         this.normalizer = new TextNormalizer();
         this.debug = options.debug || false;
     }
 
     async initialize() {
         try {
+            console.log(`${this.READER_NAME} Pradedamas frazių žodyno krovimas...`);
+            console.time('phraseLoad'); // Pradedame matuti krovimo laiką
+            
             const response = await fetch('phrases.json');
             if (!response.ok) {
-                throw new Error(`Failed to load phrases: ${response.statusText}`);
+                throw new Error(`Nepavyko užkrauti frazių: ${response.statusText}`);
             }
-            this.phrases = await response.json();
-            if (this.debug) {
-                console.log(`${this.READER_NAME} Loaded ${Object.keys(this.phrases).length} phrases`);
+
+            const text = await response.text();
+            console.log(`${this.READER_NAME} Žodyno dydis:`, (text.length / 1024 / 1024).toFixed(2), 'MB');
+            
+            try {
+                this.phrases = JSON.parse(text);
+                // Optimizuojame duomenų struktūrą paieškai
+                this.preprocessPhrases();
+                
+                console.log(`${this.READER_NAME} Sėkmingai užkrautos ${Object.keys(this.phrases).length} frazės`);
+                console.timeEnd('phraseLoad'); // Baigiame matuoti krovimo laiką
+            } catch (jsonError) {
+                console.error(`${this.READER_NAME} Klaida apdorojant JSON:`, jsonError);
+                throw jsonError;
             }
         } catch (error) {
             console.error(`${this.READER_NAME} Initialization error:`, error);
@@ -24,93 +39,83 @@ export class PhraseReader {
         }
     }
 
+    preprocessPhrases() {
+        console.time('preprocess');
+        // Rūšiuojame frazes pagal ilgį (nuo ilgiausios iki trumpiausios)
+        const sortedPhrases = Object.entries(this.phrases)
+            .sort(([a], [b]) => b.length - a.length);
+
+        // Sukuriame Map su preliminariai apdorotomis frazėmis
+        for (const [key, value] of sortedPhrases) {
+            this.phrasesMap.set(key.toLowerCase(), {
+                ...value,
+                length: key.length,
+                words: key.toLowerCase().split(/\s+/).length // Žodžių skaičius optimizacijai
+            });
+        }
+        console.timeEnd('preprocess');
+        console.log(`${this.READER_NAME} Frazės paruoštos paieškai:`, this.phrasesMap.size);
+    }
+
     findPhrases(text) {
-        if (!this.phrases) {
-            throw new Error('PhraseReader not initialized. Call initialize() first.');
+        console.time('phraseSearch');
+        if (!this.phrasesMap.size) {
+            throw new Error('PhraseReader neinicializuotas. Pirma iškvieskite initialize()');
         }
 
-        // Sukuriame rezultatų masyvą, kur saugosime rastas frazes
         const foundPhrases = [];
+        const normalizedText = text.toLowerCase();
+        let processedChars = 0;
+        const totalChars = normalizedText.length;
 
-        // Surūšiuojame frazes pagal ilgį (nuo ilgiausios iki trumpiausios)
-        const sortedPhrases = Object.keys(this.phrases).sort((a, b) => b.length - a.length);
-
-        // Einame per tekstą ir ieškome frazių
-        for (const phraseKey of sortedPhrases) {
-            const phraseData = this.phrases[phraseKey];
-            const phrase = phraseData.fraze.toLowerCase();
-            
-            // Ieškome frazės tekste
+        // Optimizuota paieška naudojant Map
+        for (const [phrase, metadata] of this.phrasesMap) {
             let position = -1;
-            const normalizedText = text.toLowerCase();
             
             while ((position = normalizedText.indexOf(phrase, position + 1)) !== -1) {
-                // Tikriname, ar tai pilnas žodis/frazė, o ne žodžio dalis
+                // Tikriname žodžių ribas
                 const beforeChar = position > 0 ? normalizedText[position - 1] : ' ';
                 const afterChar = position + phrase.length < normalizedText.length ? 
                     normalizedText[position + phrase.length] : ' ';
                 
                 if (this.isWordBoundary(beforeChar) && this.isWordBoundary(afterChar)) {
                     foundPhrases.push({
-                        phrase: phrase,
+                        text: phrase,
                         start: position,
                         end: position + phrase.length,
-                        metadata: phraseData
+                        type: metadata['kalbos dalis'],
+                        cerf: metadata.CERF,
+                        translation: metadata.vertimas
                     });
                 }
             }
+
+            // Progreso sekimas
+            processedChars += phrase.length;
+            if (processedChars % 1000000 === 0) { // Kas milijoną simbolių
+                console.log(`${this.READER_NAME} Apdorota ${Math.round(processedChars/totalChars*100)}%`);
+            }
         }
 
-        // Rūšiuojame pagal poziciją tekste
         foundPhrases.sort((a, b) => a.start - b.start);
-
-        return this.handleOverlappingPhrases(foundPhrases);
+        console.timeEnd('phraseSearch');
+        console.log(`${this.READER_NAME} Rasta frazių:`, foundPhrases.length);
+        
+        return foundPhrases;
     }
 
     isWordBoundary(char) {
-        // Tikriname, ar simbolis yra žodžių skirtukas
         return /[\s.,!?;:"'()[\]{}<>\\\/\-—]/.test(char);
     }
 
-    handleOverlappingPhrases(phrases) {
-        // Jau surūšiuota pagal pradžios poziciją
-        return phrases.filter((phrase, index) => {
-            // Jei tai paskutinė frazė, ją paliekame
-            if (index === phrases.length - 1) return true;
-
-            // Tikriname persidengimą su sekančia fraze
-            const nextPhrase = phrases[index + 1];
-            
-            // Jei frazės persidengia, patikriname ar viena nėra kitos dalis
-            if (this.doPhrasesOverlap(phrase, nextPhrase)) {
-                // Jei dabartinė frazė yra ilgesnės frazės dalis, paliekame abi
-                return true;
-            }
-
-            return true;
-        });
-    }
-
-    doPhrasesOverlap(phrase1, phrase2) {
-        return (phrase1.start <= phrase2.start && phrase1.end > phrase2.start) ||
-               (phrase2.start <= phrase1.start && phrase2.end > phrase1.start);
-    }
-
     processText(text) {
-        // Randame frazes
+        console.time('totalProcess');
         const foundPhrases = this.findPhrases(text);
+        console.timeEnd('totalProcess');
         
-        // Grąžiname objektą su tekstu ir rasta informacija
         return {
             originalText: text,
-            phrases: foundPhrases.map(phrase => ({
-                text: text.slice(phrase.start, phrase.end),
-                start: phrase.start,
-                end: phrase.end,
-                type: phrase.metadata['kalbos dalis'],
-                cerf: phrase.metadata.CERF,
-                translation: phrase.metadata.vertimas
-            }))
+            phrases: foundPhrases
         };
     }
 }
