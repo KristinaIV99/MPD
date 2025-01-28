@@ -2,7 +2,7 @@
 export class WordCounter {
   constructor() {
     this.COUNTER_NAME = '[WordCounter]';
-  }
+
     // Nustatome chunk dydį pagal įrenginį
     if (window.navigator.userAgent.toLowerCase().includes('mobile')) {
       this.CHUNK_SIZE = 100000;  // 100KB telefonams
