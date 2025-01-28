@@ -67,6 +67,15 @@ class TextNormalizer {
       normalized = this.handleSpecialSymbols(normalized);
       normalized = this.handleImages(normalized);
       
+
+      normalized = normalized
+        .replace(/<!--å-->/g, 'å')
+        .replace(/<!--ä-->/g, 'ä')
+        .replace(/<!--ö-->/g, 'ö')
+        .replace(/<!--Å-->/g, 'Å')
+        .replace(/<!--Ä-->/g, 'Ä')
+        .replace(/<!--Ö-->/g, 'Ö');
+
       this.log('=== normalizeMarkdown END ===', normalized);
       return normalized;
     } catch (error) {
