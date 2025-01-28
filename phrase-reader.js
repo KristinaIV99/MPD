@@ -25,7 +25,6 @@ export class PhraseReader {
             try {
                 this.phrases = JSON.parse(text);
                 
-                // Rodome detalią informaciją apie žodyną
                 console.log(`${this.READER_NAME} Žodyno dydis:`, text.length, 'baitų');
                 const sample = Object.keys(this.phrases).slice(0, 3);
                 console.log(`${this.READER_NAME} Pavyzdinės frazės (pirmos 3):`, 
@@ -50,9 +49,21 @@ export class PhraseReader {
         }
     }
 
+    hasScandinavianLetters(text) {
+        return /[åäöÅÄÖ]/.test(text);
+    }
+
+    escapeRegExp(string) {
+        const escaped = string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const withScandinavian = escaped
+            .replace(/å/gi, '(å|a)')
+            .replace(/ä/gi, '(ä|a)')
+            .replace(/ö/gi, '(ö|o)');
+        return withScandinavian;
+    }
+
     preprocessPhrases() {
         console.time('preprocess');
-        // Tikriname ar frazė turi bent 2 žodžius ir rūšiuojame pagal ilgį
         const sortedPhrases = Object.entries(this.phrases)
             .filter(([key]) => {
                 const wordCount = key.trim().split(/\s+/).length;
@@ -73,7 +84,7 @@ export class PhraseReader {
             }))
         );
 
-        // Normalizuojame frazes prieš įdėdami į Map
+        // Įdedame frazes į Map
         for (const [key, value] of sortedPhrases) {
             this.phrasesMap.set(key, {
                 ...value,
@@ -85,43 +96,6 @@ export class PhraseReader {
         
         console.timeEnd('preprocess');
         console.log(`${this.READER_NAME} Frazės paruoštos paieškai:`, this.phrasesMap.size);
-    }
-
-    hasScandinavianLetters(text) {
-        return /[åäöÅÄÖ]/.test(text);
-    }
-
-    escapeRegExp(string) {
-        const escaped = string.replace(/[.*+?^${}()|[\]\\]/g, '\\    findPhrases(text) {
-        console.time('phraseSearch');
-        if (!this.phrasesMap.size) {
-            throw new Error('PhraseReader neinicializuotas. Pirma iškvieskite initialize()');
-        }
-
-        const foundPhrases = [];
-        
-        // Svarbu: tekstą paverčiame į mažąsias raides ir koduojame vienodai
-        const searchText = text.toLowerCase().normalize('NFD');
-        
-        console.log(`${this.READER_NAME} Teksto pavyzdys (pirmi 100 simboliai):`, searchText.substring(0, 100));
-
-        // Ieškome kiekvienos frazės
-        for (const [phrase, metadata] of this.phrasesMap) {
-            // Svarbu: frazę paverčiame į mažąsias raides ir koduojame vienodai
-            const searchPhrase = phrase.toLowerCase().normalize('NFD');
-            
-            console.log(`${this.READER_NAME} Ieškoma frazė:`, {
-                originali: phrase,
-                paieškos: searchPhrase
-            });
-
-            let position = -1;
-            while ((position = searchText.indexOf(searchPhrase, position + 1)) !== -1) {');
-        const withScandinavian = escaped
-            .replace(/å/gi, '(å|a)')
-            .replace(/ä/gi, '(ä|a)')
-            .replace(/ö/gi, '(ö|o)');
-        return withScandinavian;
     }
 
     findPhrases(text) {
@@ -177,28 +151,32 @@ export class PhraseReader {
                         });
                     }
                 }
-                // Tikriname žodžių ribas
-                const beforeChar = position > 0 ? searchText[position - 1] : ' ';
-                const afterChar = position + searchPhrase.length < searchText.length ? 
-                    searchText[position + searchPhrase.length] : ' ';
-                
-                if (this.isWordBoundary(beforeChar) && this.isWordBoundary(afterChar)) {
-                    foundPhrases.push({
-                        text: phrase, // Išsaugome originalią frazę
-                        start: position,
-                        end: position + searchPhrase.length,
-                        type: metadata['kalbos dalis'],
-                        cerf: metadata.CERF,
-                        translation: metadata.vertimas
-                    });
-                    console.log(`${this.READER_NAME} Rasta frazė:`, {
-                        fraze: phrase,
-                        pozicija: position,
-                        kontekstas: searchText.substring(
-                            Math.max(0, position - 20),
-                            Math.min(searchText.length, position + searchPhrase.length + 20)
-                        )
-                    });
+            } else {
+                // Įprasta paieška frazėms be skandinaviškų raidžių
+                let position = -1;
+                while ((position = searchText.indexOf(searchPhrase, position + 1)) !== -1) {
+                    const beforeChar = position > 0 ? searchText[position - 1] : ' ';
+                    const afterChar = position + searchPhrase.length < searchText.length ? 
+                        searchText[position + searchPhrase.length] : ' ';
+                    
+                    if (this.isWordBoundary(beforeChar) && this.isWordBoundary(afterChar)) {
+                        foundPhrases.push({
+                            text: phrase,
+                            start: position,
+                            end: position + searchPhrase.length,
+                            type: metadata['kalbos dalis'],
+                            cerf: metadata.CERF,
+                            translation: metadata.vertimas
+                        });
+                        console.log(`${this.READER_NAME} Rasta frazė:`, {
+                            fraze: phrase,
+                            pozicija: position,
+                            kontekstas: searchText.substring(
+                                Math.max(0, position - 20),
+                                Math.min(searchText.length, position + searchPhrase.length + 20)
+                            )
+                        });
+                    }
                 }
             }
         }
