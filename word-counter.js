@@ -53,7 +53,6 @@ export class WordCounter {
       throw error;
     }
   }
-}
 
   getWordStatistics(words) {
     const wordFrequency = {};
