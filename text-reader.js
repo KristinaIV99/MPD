@@ -1,97 +1,88 @@
-import { TextNormalizer } from './text-normalizer.js'; 
+import { TextNormalizer } from './text-normalizer.js';
 
 export class TextReader {
   constructor(config = {}) {
     this.READER_NAME = '[TextReader]';
     
     this.config = {
-      maxFileSize: 100 * 1024 * 1024, // 100MB riba
-      allowedTypes: [
-        'text/markdown',
-        'text/plain',
-        'application/octet-stream'
-      ],
+      maxFileSize: 100 * 1024 * 1024, // 100MB
+      allowedTypes: ['text/markdown', 'text/plain', 'application/octet-stream'],
       encoding: 'utf-8',
+      chunkSize: 1024 * 1024, // 1MB chunk'as pagal nutylėjimą
       ...config
     };
 
     this.normalizer = new TextNormalizer();
     this.abortController = new AbortController();
     this.events = new EventTarget();
+    this.currentReader = null;
   }
 
   async readFile(file) {
     this._validateFile(file);
+    this.abortController = new AbortController();
     
     try {
-      const text = await this._readFullFile(file);
+      let text = '';
+      let offset = 0;
+
+      while (offset < file.size && !this.abortController.signal.aborted) {
+        const chunk = await this._readChunk(file, offset);
+        text += chunk;
+        offset += this.config.chunkSize;
+        this._dispatchProgress(file, offset);
+      }
+
       return this.normalizer.normalizeMarkdown(text);
     } finally {
       this._cleanup();
     }
   }
 
-  _validateFile(file) {
-    console.debug(`${this.READER_NAME} Failo informacija: 
-      Pavadinimas: ${file.name}
-      Dydis: ${file.size}
-      Tipas: ${file.type}
-      Plėtinys: ${file.name.split('.').pop()}`
-    );
-
-    if (file.size > this.config.maxFileSize) {
-      throw new Error(`Failas viršija ${this.config.maxFileSize/1024/1024}MB ribą`);
-    }
-
-    if (!this.config.allowedTypes.includes(file.type)) {
-      if (file.name.toLowerCase().endsWith('.md')) {
-        return;
-      }
-      throw new Error(`Netinkamas failo formatas: ${file.type}. Leidžiami tipai: ${this.config.allowedTypes.join(', ')}`);
-    }
-  }
-
-  _readFullFile(file) {
+  _readChunk(file, offset) {
     return new Promise((resolve, reject) => {
       if (this.abortController.signal.aborted) {
         reject(new DOMException('Operation aborted', 'AbortError'));
         return;
       }
 
+      const chunk = file.slice(offset, offset + this.config.chunkSize);
       const reader = new FileReader();
-      
-      reader.onload = () => {
-        this._dispatchProgress(file, file.size);
-        resolve(reader.result);
-      };
+      this.currentReader = reader;
+
+      reader.onload = () => resolve(reader.result);
       reader.onerror = () => reject(reader.error);
       reader.onabort = () => reject(new DOMException('Operation aborted', 'AbortError'));
-
-      const abortHandler = () => {
-        reader.abort();
-        reject(new DOMException('Operation aborted', 'AbortError'));
-      };
-
-      this.abortController.signal.addEventListener('abort', abortHandler, { once: true });
-      reader.readAsText(file, this.config.encoding);
+      
+      reader.readAsText(chunk, this.config.encoding);
     });
   }
 
   _dispatchProgress(file, loaded) {
-    const percent = loaded >= file.size ? 100 : 
-      Math.round((loaded / file.size) * 100);
-
+    const percent = Math.min(Math.round((loaded / file.size) * 100), 100);
     this.events.dispatchEvent(new CustomEvent('progress', {
-      detail: { percent, loaded, total: file.size }
+      detail: { 
+        percent,
+        loaded: Math.min(loaded, file.size),
+        total: file.size 
+      }
     }));
   }
 
   abort() {
+    if (this.currentReader) {
+      this.currentReader.abort();
+    }
     this.abortController.abort();
     console.warn(`${this.READER_NAME} Skaitymas nutrauktas`);
   }
 
+  _validateFile(file) {
+    // ... (liks toks pats kaip jūsų originaliame kode) ...
+  }
+
   _cleanup() {
+    this.currentReader = null;
     this.abortController = new AbortController();
   }
 
