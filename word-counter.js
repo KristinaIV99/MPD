@@ -20,33 +20,60 @@ export class WordCounter {
       .toLowerCase();                                    // Konvertuojame į mažąsias raides
 
     // Parodome pavyzdį konsolėje debugginimui
-    console.log(`${this.COUNTER_NAME} Teksto pavyzdys po valymo:`, cleanText.slice(0, 100));
-    return cleanText;
+      console.log(`${this.COUNTER_NAME} Teksto pavyzdys po valymo:`, cleanText.slice(0, 100));
+      return cleanText;
+    } catch (error) {
+      console.error(`${this.COUNTER_NAME} Klaida valant tekstą:`, error);
+      throw error;
+    }
   }
 
   _getWords(text) {
-    const cleanText = this._cleanText(text);
-    const words = cleanText
-      .split(' ')
-      .filter(word => word.length > 0)
-      // Patvirtina, kad žodis turi bent vieną švedišką raidę ir gali turėti brūkšnelį
-      .filter(word => /^[a-zA-ZåäöÅÄÖéèêëîïûüÿçÉÈÊËÎÏÛÜŸÇ]+(-[a-zA-ZåäöÅÄÖéèêëîïûüÿçÉÈÊËÎÏÛÜŸÇ]+)*('?[a-zA-ZåäöÅÄÖéèêëîïûüÿçÉÈÊËÎÏÛÜŸÇ]*)*$/.test(word));
+    try {
+      const cleanText = this._cleanText(text);
+      const words = cleanText
+        .split(' ')
+        .filter(word => word.length > 0)
+        .filter(word => /^[a-zA-ZåäöÅÄÖéèêëîïûüÿçÉÈÊËÎÏÛÜŸÇ]+(-[a-zA-ZåäöÅÄÖéèêëîïûüÿçÉÈÊËÎÏÛÜŸÇ]+)*('?[a-zA-ZåäöÅÄÖéèêëîïûüÿçÉÈÊËÎÏÛÜŸÇ]*)*$/.test(word));
 
-    console.log(`${this.COUNTER_NAME} Rasta žodžių:`, words.length);
-    console.log(`${this.COUNTER_NAME} Pirmi 20 žodžių:`, words.slice(0, 20));
-    console.log(`${this.COUNTER_NAME} Paskutiniai 20 žodžių:`, words.slice(-20));
-    return words;
+      console.log(`${this.COUNTER_NAME} Rasta žodžių:`, words.length);
+      console.log(`${this.COUNTER_NAME} Pirmi 20 žodžių:`, words.slice(0, 20));
+      console.log(`${this.COUNTER_NAME} Paskutiniai 20 žodžių:`, words.slice(-20));
+      
+      return words;
+    } catch (error) {
+      console.error(`${this.COUNTER_NAME} Klaida gaunant žodžius:`, error);
+      throw error;
+    }
   }
 
   countWords(text) {
     try {
       console.log(`${this.COUNTER_NAME} Pradedamas žodžių skaičiavimas tekstui, ilgis:`, text.length);
-      const words = this._getWords(text);
-      const count = words.length;
-      console.log(`${this.COUNTER_NAME} Baigtas skaičiavimas, rasta žodžių:`, count);
+      
+      // Skaidome tekstą į mažesnes dalis jei jis per didelis
+      const CHUNK_SIZE = 500000; // ~500KB teksto
+      let totalWords = [];
+      
+      if (text.length > CHUNK_SIZE) {
+        console.log(`${this.COUNTER_NAME} Tekstas didelis, skaidome į dalis`);
+        
+        // Skaidome tekstą į dalis
+        for (let i = 0; i < text.length; i += CHUNK_SIZE) {
+          const chunk = text.slice(i, i + CHUNK_SIZE);
+          const chunkWords = this._getWords(chunk);
+          totalWords = totalWords.concat(chunkWords);
+          console.log(`${this.COUNTER_NAME} Apdorota ${Math.round((i + CHUNK_SIZE) / text.length * 100)}%`);
+        }
+      } else {
+        totalWords = this._getWords(text);
+      }
+
+      console.log(`${this.COUNTER_NAME} Baigtas skaičiavimas, rasta žodžių:`, totalWords.length);
+      
       return {
-        totalWords: count,
-        words: words
+        totalWords: totalWords.length,
+        words: totalWords
       };
     } catch (error) {
       console.error(`${this.COUNTER_NAME} Klaida skaičiuojant žodžius:`, error);
@@ -55,42 +82,54 @@ export class WordCounter {
   }
 
   getWordStatistics(words) {
-    const wordFrequency = {};
-    
-    // Skaičiuojame kiekvieno žodžio pasikartojimus
-    words.forEach(word => {
-      wordFrequency[word] = (wordFrequency[word] || 0) + 1;
-    });
+    try {
+      const wordFrequency = {};
+      let processed = 0;
+      const total = words.length;
+      
+      // Apdorojame žodžius dalimis
+      const BATCH_SIZE = 10000;
+      for (let i = 0; i < words.length; i += BATCH_SIZE) {
+        const batch = words.slice(i, i + BATCH_SIZE);
+        batch.forEach(word => {
+          wordFrequency[word] = (wordFrequency[word] || 0) + 1;
+        });
+        processed += batch.length;
+        console.log(`${this.COUNTER_NAME} Statistika: ${Math.round(processed/total * 100)}%`);
+      }
 
-    // Rūšiuojame visus žodžius pagal dažnumą
-    const sortedWords = Object.entries(wordFrequency)
-      .sort(([, a], [, b]) => b - a);
-    
-    // Spausdiname statistiką konsolėje
-    console.log(`\n${this.COUNTER_NAME} STATISTIKA:`);
-    console.log(`Iš viso žodžių: ${words.length}`);
-    console.log(`Unikalių žodžių: ${sortedWords.length}`);
-    
-    // Spausdiname dažniausiai pasitaikančius žodžius
-    console.log(`\n${this.COUNTER_NAME} 500 DAŽNIAUSIŲ ŽODŽIŲ:`);
-    console.log('Nr. | Žodis                | Kiek kartų');
-    console.log('-'.repeat(45));
-    sortedWords.slice(0, 500).forEach(([word, count], index) => {
-      console.log(`${(index + 1).toString().padStart(3, ' ')} | ${word.padEnd(20, ' ')} | ${count}`);
-    });
+      const sortedWords = Object.entries(wordFrequency)
+        .sort(([, a], [, b]) => b - a);
 
-    // Spausdiname visus unikalius žodžius
-    console.log(`\n${this.COUNTER_NAME} VISI UNIKALŪS ŽODŽIAI:`);
-    console.log('Nr. | Žodis');
-    console.log('-'.repeat(30));
-    sortedWords.forEach(([word], index) => {
-      console.log(`${(index + 1).toString().padStart(3, ' ')} | ${word}`);
-    });
+      // Spausdiname statistiką konsolėje
+      console.log(`\n${this.COUNTER_NAME} STATISTIKA:`);
+      console.log(`Iš viso žodžių: ${words.length}`);
+      console.log(`Unikalių žodžių: ${sortedWords.length}`);
+      
+      // Spausdiname dažniausiai pasitaikančius žodžius
+      console.log(`\n${this.COUNTER_NAME} 500 DAŽNIAUSIŲ ŽODŽIŲ:`);
+      console.log('Nr. | Žodis                | Kiek kartų');
+      console.log('-'.repeat(45));
+      sortedWords.slice(0, 500).forEach(([word, count], index) => {
+        console.log(`${(index + 1).toString().padStart(3, ' ')} | ${word.padEnd(20, ' ')} | ${count}`);
+      });
 
-    return {
-      totalWords: words.length,
-      uniqueWords: sortedWords.length,
-      mostCommon: sortedWords.slice(0, 500)
-    };
+      // Spausdiname visus unikalius žodžius
+      console.log(`\n${this.COUNTER_NAME} VISI UNIKALŪS ŽODŽIAI:`);
+      console.log('Nr. | Žodis');
+      console.log('-'.repeat(30));
+      sortedWords.forEach(([word], index) => {
+        console.log(`${(index + 1).toString().padStart(3, ' ')} | ${word}`);
+      });
+
+      return {
+        totalWords: words.length,
+        uniqueWords: sortedWords.length,
+        mostCommon: sortedWords
+      };
+    } catch (error) {
+      console.error(`${this.COUNTER_NAME} Klaida ruošiant statistiką:`, error);
+      throw error;
+    }
   }
 }
