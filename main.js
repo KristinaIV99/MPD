@@ -1,7 +1,6 @@
 import { TextReader } from './text-reader.js';
 import { WordCounter } from './word-counter.js';
 import { PhraseReader } from './phrase-reader.js';
-import { TextHighlighter } from './text-highlighter.js';
 
 class App {
   constructor() {
@@ -9,8 +8,7 @@ class App {
     this.reader = new TextReader();
     this.counter = new WordCounter();
     this.phraseReader = new PhraseReader();
-    this.highlighter = new TextHighlighter();
-    
+       
     // Inicializuojame PhraseReader
     this.phraseReader.initialize().catch(error => {
         console.error(`${this.APP_NAME} Klaida inicializuojant PhraseReader:`, error);
@@ -108,14 +106,7 @@ class App {
   setContent(text, phrases = []) {  
     const div = document.createElement('div');
     div.className = 'text-content';
-    
-    // Pažymime frazes su specialiais žymekliais
-    const markedText = this.highlighter.markPhrases(text, phrases);
-    
-    // Patikriname ar žymekliai pridėti
-    console.log('Pažymėtas tekstas:', markedText);
-    
-    div.textContent = markedText;
+    div.textContent = text;
     
     // Jei yra rastų frazių, išvedame jas į konsolę
     if (phrases.length > 0) {
