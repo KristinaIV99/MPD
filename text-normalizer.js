@@ -7,7 +7,7 @@ class TextNormalizer {
     this.debug = options.debug !== false; // Defaulting to true
     
     this.patterns = {
-      sectionBreak: /^&\s*$/gm,
+      sectionBreak: /^[&][ \t]*$/gm,
       emphasis: [/_([^_]+?)_/g, /(?<!\*)\*(?!\*)([^*]+?)\*(?!\*)/g],
       strong: [/__([^_]+?)__/g, /\*\*([^*]+?)\*\*/g],
       headers: /^(#{1,6})\s*(.+)$/gm,
@@ -56,6 +56,7 @@ class TextNormalizer {
       let normalized = text;
       normalized = this.removeUnwantedElements(normalized);
       normalized = this.handleHtmlContent(normalized);
+      normalized = this.handleSectionBreaks(normalized);
       normalized = this.handleEmphasis(normalized);
       normalized = this.handleHeaders(normalized);
       normalized = this.handleParagraphsAndSpacing(normalized);
