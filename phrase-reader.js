@@ -24,6 +24,21 @@ export class PhraseReader {
             
             try {
                 this.phrases = JSON.parse(text);
+                
+                // Rodome detalią informaciją apie žodyną
+                console.log(`${this.READER_NAME} Žodyno turinys:`, this.phrases);
+                console.log(`${this.READER_NAME} Frazių skaičius:`, Object.keys(this.phrases).length);
+                
+                // Rodome kiekvienos frazės informaciją
+                Object.entries(this.phrases).forEach(([key, value]) => {
+                    console.log(`${this.READER_NAME} Frazė:`, {
+                        frazė: key,
+                        kalbosDalis: value['kalbos dalis'],
+                        CERF: value.CERF,
+                        vertimas: value.vertimas
+                    });
+                });
+                
                 // Optimizuojame duomenų struktūrą paieškai
                 this.preprocessPhrases();
                 
@@ -41,8 +56,16 @@ export class PhraseReader {
 
     preprocessPhrases() {
         console.time('preprocess');
-        // Rūšiuojame frazes pagal ilgį (nuo ilgiausios iki trumpiausios)
+        // Tikriname ar frazė turi bent 2 žodžius ir rūšiuojame pagal ilgį
         const sortedPhrases = Object.entries(this.phrases)
+            .filter(([key]) => {
+                const wordCount = key.trim().split(/\s+/).length;
+                if (wordCount < 2) {
+                    console.warn(`${this.READER_NAME} Ignoruojama frazė "${key}" - turi tik ${wordCount} žodį`);
+                    return false;
+                }
+                return true;
+            })
             .sort(([a], [b]) => b.length - a.length);
 
         // Sukuriame Map su preliminariai apdorotomis frazėmis
