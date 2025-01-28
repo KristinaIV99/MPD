@@ -54,7 +54,6 @@ class TextNormalizer {
       }
 
       let normalized = text;
-      normalized = this.protectScandinavianLetters(normalized);
       normalized = this.removeUnwantedElements(normalized);
       normalized = this.handleHtmlContent(normalized);
       normalized = this.handleSectionBreaks(normalized);
@@ -67,14 +66,6 @@ class TextNormalizer {
       normalized = this.handleSpecialSymbols(normalized);
       normalized = this.handleImages(normalized);
       
-
-      normalized = normalized
-        .replace(/<!--å-->/g, 'å')
-        .replace(/<!--ä-->/g, 'ä')
-        .replace(/<!--ö-->/g, 'ö')
-        .replace(/<!--Å-->/g, 'Å')
-        .replace(/<!--Ä-->/g, 'Ä')
-        .replace(/<!--Ö-->/g, 'Ö');
 
       this.log('=== normalizeMarkdown END ===', normalized);
       return normalized;
@@ -205,22 +196,6 @@ class TextNormalizer {
     this.log('=== normalizeCodeBlocks END ===', result);
     return result;
   }
-
-  protectScandinavianLetters(text) {
-      const scandChars = {
-          'å': '<!--å-->',
-          'ä': '<!--ä-->',
-          'ö': '<!--ö-->',
-          'Å': '<!--Å-->',
-          'Ä': '<!--Ä-->',
-          'Ö': '<!--Ö-->'
-      };
-      console.log('Prieš skandinaviškų raidžių apsaugą:', text.substring(0,200));
-      const result = text.replace(/[åäöÅÄÖ]/g, char => scandChars[char]);
-      console.log('Po skandinaviškų raidžių apsaugos:', result.substring(0,200));
-      return result;
-  }
-
 
   handleEmphasis(text) {
     this.log('=== handleEmphasis START ===', text);
