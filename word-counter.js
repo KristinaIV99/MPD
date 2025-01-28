@@ -1,3 +1,4 @@
+
 // word-counter.js
 export class WordCounter {
   constructor() {
@@ -75,13 +76,12 @@ export class WordCounter {
           const progress = Math.min(100, Math.round((i + this.CHUNK_SIZE) / text.length * 100));
           console.log(`${this.COUNTER_NAME} Apdorota ${progress}%`);
           
-          // Trumpa pauzė tarp chunk'ų
-          await new Promise(resolve => setTimeout(resolve, 0));
+          // Pašaliname "await" ir setTimeout
         }
       } else {
         totalWords = this._getWords(text);
       }
-
+  
       return {
         totalWords: totalWords.length,
         words: totalWords
