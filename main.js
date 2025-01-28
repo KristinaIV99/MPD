@@ -52,13 +52,13 @@ class App {
       
       // Skaičiuojame žodžius ir gauname statistiką
       console.log(`${this.APP_NAME} Pradedamas žodžių skaičiavimas`);
-      const wordCount = this.counter.countWords(text);
-	  const stats = this.counter.getWordStatistics(wordCount.words);
-      console.log(`${this.APP_NAME} Žodžių suskaičiuota:`, wordCount.totalWords);
+      const result = await this.counter.countWords(text);
+      const stats = await this.counter.getWordStatistics(result.words);
+      console.log(`${this.APP_NAME} Žodžių suskaičiuota:`, result.totalWords);
       console.log(`${this.APP_NAME} Statistika:`, stats);
       
       // Atnaujiname UI
-      this.updateWordCount(wordCount.totalWords, stats);
+      this.updateWordCount(result, stats);
       
       this.setContent(text);
       console.log(`${this.APP_NAME} Teksto turinys sėkmingai įkeltas`);
