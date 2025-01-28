@@ -58,7 +58,7 @@ class App {
       console.log(`${this.APP_NAME} Statistika:`, stats);
       
       // Atnaujiname UI
-      this.updateWordCount(wordCount, stats);
+      this.updateWordCount(wordCount.totalWords, stats);
       
       this.setContent(text);
       console.log(`${this.APP_NAME} Teksto turinys sėkmingai įkeltas`);
