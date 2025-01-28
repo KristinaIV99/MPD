@@ -1,0 +1,122 @@
+{
+    "jag_pron": {
+        "kalbos dalis": "pron",
+        "vertimas": "aš",
+        "CERF": "A1",
+        "base_word": "jag"
+    },
+    "jag_subst": {
+        "kalbos dalis": "subst",
+        "vertimas": "perkūnija",
+        "CERF": "A1",
+        "base_word": "jag"
+    },
+    "är_verb": {
+        "kalbos dalis": "pron",
+        "vertimas": "yra",
+        "CERF": "A1",
+        "base_word": "är"
+    },
+    "ett_verb": {
+        "kalbos dalis": "pron",
+        "vertimas": "yra",
+        "CERF": "A1",
+        "base_word": "ett"
+    },
+    "på_subst": {
+        "kalbos dalis": "subst",
+        "vertimas": "perkūnija",
+        "CERF": "A1",
+        "base_word": "på"
+    },
+    "de_verb": {
+        "kalbos dalis": "pron",
+        "vertimas": "yra",
+        "CERF": "A1",
+        "base_word": "de"
+    },
+    "hon_pron": {
+        "kalbos dalis": "pron",
+        "vertimas": "ji",
+        "CERF": "A1",
+        "base_word": "hon"
+    },
+    "för_pron": {
+        "kalbos dalis": "pron",
+        "vertimas": "ji",
+        "CERF": "A1",
+        "base_word": "för"
+    },
+    "när_pron": {
+        "kalbos dalis": "pron",
+        "vertimas": "ji",
+        "CERF": "A1",
+        "base_word": "när"
+    },
+    "åska_verb": {
+        "kalbos dalis": "subst",
+        "vertimas": "perkūnija",
+        "CERF": "A1",
+        "base_word": "åska"
+    },
+    "så_adv": {
+        "kalbos dalis": "adv",
+        "vertimas": "taip",
+        "CERF": "A1",
+        "base_word": "så"
+    },
+    "på_prep": {
+        "kalbos dalis": "prep",
+        "vertimas": "ant",
+        "CERF": "A1",
+        "base_word": "på"
+    },
+    "går_verb": {
+        "kalbos dalis": "verb",
+        "vertimas": "eiti",
+        "CERF": "A1",
+        "base_word": "går"
+    },
+    "ö_subst": {
+        "kalbos dalis": "subst",
+        "vertimas": "sala",
+        "CERF": "A1",
+        "base_word": "ö"
+    },
+    "gå_verb": {
+        "kalbos dalis": "verb",
+        "vertimas": "eiti",
+        "CERF": "A1",
+        "base_word": "gå"
+    },
+    "ut_adv": {
+        "kalbos dalis": "adv",
+        "vertimas": "lauk",
+        "CERF": "A1",
+        "base_word": "ut"
+    },
+    "er_pron": {
+        "kalbos dalis": "pron",
+        "vertimas": "jūs",
+        "CERF": "A1",
+        "base_word": "er"
+    },
+    "ör_subst": {
+        "kalbos dalis": "subst",
+        "vertimas": "ėras",
+        "CERF": "A1",
+        "base_word": "ör"
+    },
+    "öra_subst": {
+        "kalbos dalis": "subst",
+        "vertimas": "ausis",
+        "CERF": "A1",
+        "base_word": "öra"
+    },
+    "år_subst": {
+        "kalbos dalis": "subst",
+        "vertimas": "metai",
+        "CERF": "A1",
+        "base_word": "år"
+    }
+}
