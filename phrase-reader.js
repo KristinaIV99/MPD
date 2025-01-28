@@ -140,6 +140,19 @@ export class PhraseReader {
                             pozicija: match.index,
                             kontekstas: searchText.substr(Math.max(0, match.index - 20), 40)
                         });
+                        
+                        foundPhrases.push({
+                            text: phrase,
+                            start: match.index,
+                            end: match.index + match[0].length,
+                            type: metadata['kalbos dalis'],
+                            cerf: metadata.CERF,
+                            translation: metadata.vertimas
+                        });
+                    }
+                } catch (error) {
+                    console.error(`${this.READER_NAME} Klaida ieškant skandinaviškos frazės "${phrase}":`, error);
+                }
                     foundPhrases.push({
                         text: phrase,
                         start: match.index,
