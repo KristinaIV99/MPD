@@ -23,19 +23,19 @@
         "vertimas": "tarsi",
         "CERF": "A1"
     },
-    "Hur har ni det egentligen": {
+    "hur har ni det egentligen": {
         "fraze": "Hur har ni det egentligen",
         "kalbos dalis": "verb",
         "vertimas": "esu tikra",
         "CERF": "A1"
     },
-    "Hur går det": {
+    "hur går det": {
         "fraze": "Hur går det",
         "kalbos dalis": "verb",
         "vertimas": "aš kovosiu",
         "CERF": "A1"
     },
-    "Som om hon": {
+    "som om hon": {
         "fraze": "Som om hon",
         "kalbos dalis": "konj",
         "vertimas": "tarsi",
@@ -47,13 +47,19 @@
         "vertimas": "darysiu",
         "CERF": "A1"
     },
-    "Så länge det": {
+    "så länge det": {
         "fraze": "Så länge det",
         "kalbos dalis": "verb",
         "vertimas": "esu tikra",
         "CERF": "A1"
     },
-    "Så länge det finns kvinnor": {
+    "det finns kvinnor": {
+        "fraze": "Så länge det finns kvinnor",
+        "kalbos dalis": "verb",
+        "vertimas": "aš kovosiu",
+        "CERF": "A1"
+    },
+    "så länge det finns kvinnor": {
         "fraze": "Så länge det finns kvinnor",
         "kalbos dalis": "verb",
         "vertimas": "aš kovosiu",
