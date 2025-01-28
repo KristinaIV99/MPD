@@ -1,16 +1,16 @@
 export class TextHighlighter {
-    highlightPhrases(text, phrases) {
-        let htmlText = text;
+    markPhrases(text, phrases) {
+        let markedText = text;
         const sortedPhrases = [...phrases].sort((a, b) => b.start - a.start);
         
         for (const phrase of sortedPhrases) {
-            const before = htmlText.slice(0, phrase.start);
-            const highlight = htmlText.slice(phrase.start, phrase.end);
-            const after = htmlText.slice(phrase.end);
+            const before = markedText.slice(0, phrase.start);
+            const highlight = markedText.slice(phrase.start, phrase.end);
+            const after = markedText.slice(phrase.end);
             
-            htmlText = `${before}<span class="highlight">${highlight}</span>${after}`;
+            markedText = `${before}[[PHRASE_START]]${highlight}[[PHRASE_END]]${after}`;
         }
         
-        return htmlText;
+        return markedText;
     }
 }
