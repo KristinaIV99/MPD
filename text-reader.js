@@ -1,4 +1,3 @@
-
 import { TextNormalizer } from './text-normalizer.js'; 
 
 export class TextReader {
@@ -6,39 +5,27 @@ export class TextReader {
     this.READER_NAME = '[TextReader]';
     
     this.config = {
-      chunkSize: 512 * 1024,         // Sumažiname iki 512KB (buvo 1MB)
-      maxFileSize: 100 * 1024 * 1024, // Paliekame 100MB
+      maxFileSize: 100 * 1024 * 1024, // 100MB riba
       allowedTypes: [
         'text/markdown',
         'text/plain',
         'application/octet-stream'
       ],
       encoding: 'utf-8',
-      maxRetries: 3,
-      workerEnabled: true,
-      chunkOverlap: 512,             // Sumažiname overlap (buvo 1024)
       ...config
     };
 
     this.normalizer = new TextNormalizer();
     this.abortController = new AbortController();
     this.events = new EventTarget();
-    this.worker = null;
-    this._workerAvailable = false;
-    this.activeJobId = 0;
-    this.activeRequests = new Set();
-
-    if (this.config.workerEnabled) {
-      this._initWorker();
-    }
   }
 
   async readFile(file) {
     this._validateFile(file);
     
     try {
-      const text = await this._readWithProgress(file);
-      return text;
+      const text = await this._readFullFile(file);
+      return this.normalizer.normalizeMarkdown(text);
     } finally {
       this._cleanup();
     }
@@ -64,35 +51,7 @@ export class TextReader {
     }
   }
 
-  async _readWithProgress(file) {
-    const offsets = Array.from(
-      { length: Math.ceil(file.size / this.config.chunkSize) },
-      (_, i) => i * this.config.chunkSize
-    );
-
-    const chunks = await Promise.all(
-      offsets.map(offset => this._readChunkWithRetry(file, offset))
-    );
-
-    const rawText = chunks.join('');
-    return this.normalizer.normalizeMarkdown(rawText);
-  }
-
-  async _readChunkWithRetry(file, offset, attempt = 1) {
-    try {
-      const chunk = await this._readChunk(file, offset);
-      this._dispatchProgress(file, offset + this.config.chunkSize);
-      return chunk;
-    } catch (error) {
-      console.warn(`${this.READER_NAME} Klaida skaitant chunk'ą (bandymas ${attempt}):`, error);
-      if (attempt <= this.config.maxRetries) {
-        return this._readChunkWithRetry(file, offset, attempt + 1);
-      }
-      throw error;
-    }
-  }
-
-  _readChunk(file, offset) {
+  _readFullFile(file) {
     return new Promise((resolve, reject) => {
       if (this.abortController.signal.aborted) {
         reject(new DOMException('Operation aborted', 'AbortError'));
@@ -100,9 +59,11 @@ export class TextReader {
       }
 
       const reader = new FileReader();
-      const slice = file.slice(offset, offset + this.config.chunkSize + this.config.chunkOverlap);
-
-      reader.onload = () => resolve(reader.result);
+      
+      reader.onload = () => {
+        this._dispatchProgress(file, file.size);
+        resolve(reader.result);
+      };
       reader.onerror = () => reject(reader.error);
       reader.onabort = () => reject(new DOMException('Operation aborted', 'AbortError'));
 
@@ -112,27 +73,8 @@ export class TextReader {
       };
 
       this.abortController.signal.addEventListener('abort', abortHandler, { once: true });
-      reader.readAsText(slice, this.config.encoding);
+      reader.readAsText(file, this.config.encoding);
     });
-  }
-
-  _initWorker() {
-    if (typeof Worker !== 'undefined') {
-      try {
-        this.worker = new Worker('./text-reader.worker.js', {
-          type: 'module',
-          name: 'textReaderWorker'
-        });
-        this.worker.onerror = (e) => {
-          console.debug(`${this.READER_NAME} Worker error:`, e.error);
-          this._workerAvailable = false;
-        };
-        this._workerAvailable = true;
-      } catch (e) {
-        console.debug(`${this.READER_NAME} Worker init failed:`, e);
-        this._workerAvailable = false;
-      }
-    }
   }
 
   _dispatchProgress(file, loaded) {
@@ -145,16 +87,6 @@ export class TextReader {
   }
 
   abort() {
-    this.activeRequests.forEach(jobId => {
-      this.worker?.postMessage({ type: 'cancel', jobId });
-    });
-    this.activeRequests.clear();
-
-    if (this.worker) {
-      this.worker.terminate();
-      this._initWorker();
-    }
-
     this.abortController.abort();
     console.warn(`${this.READER_NAME} Skaitymas nutrauktas`);
   }
