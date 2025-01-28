@@ -4,7 +4,7 @@ export class PhraseReader {
     constructor(options = {}) {
         this.READER_NAME = '[PhraseReader]';
         this.phrases = null;
-        this.phrasesMap = new Map(); // Optimizuota duomenų struktūra
+        this.phrasesMap = new Map();
         this.normalizer = new TextNormalizer();
         this.debug = options.debug || false;
     }
@@ -12,7 +12,7 @@ export class PhraseReader {
     async initialize() {
         try {
             console.log(`${this.READER_NAME} Pradedamas frazių žodyno krovimas...`);
-            console.time('phraseLoad'); // Pradedame matuti krovimo laiką
+            console.time('phraseLoad');
             
             const response = await fetch('phrases.json');
             if (!response.ok) {
@@ -36,11 +36,10 @@ export class PhraseReader {
                     }))
                 );
                 
-                // Optimizuojame duomenų struktūrą paieškai
                 this.preprocessPhrases();
                 
                 console.log(`${this.READER_NAME} Sėkmingai užkrautos ${Object.keys(this.phrases).length} frazės`);
-                console.timeEnd('phraseLoad'); // Baigiame matuoti krovimo laiką
+                console.timeEnd('phraseLoad');
             } catch (jsonError) {
                 console.error(`${this.READER_NAME} Klaida apdorojant JSON:`, jsonError);
                 throw jsonError;
@@ -67,7 +66,7 @@ export class PhraseReader {
 
         // Normalizuojame frazes prieš įdėdami į Map
         for (const [key, value] of sortedPhrases) {
-            const normalizedKey = key.normalize('NFC');
+            const normalizedKey = key.normalize('NFD');
             console.log(`${this.READER_NAME} Frazė normalizuojama:`, {
                 original: key,
                 normalized: normalizedKey,
@@ -79,80 +78,59 @@ export class PhraseReader {
                 words: normalizedKey.toLowerCase().split(/\s+/).length
             });
         }
-
-        // Sukuriame Map su preliminariai apdorotomis frazėmis
-        for (const [key, value] of sortedPhrases) {
-            this.phrasesMap.set(key.toLowerCase(), {
-                ...value,
-                length: key.length,
-                words: key.toLowerCase().split(/\s+/).length // Žodžių skaičius optimizacijai
-            });
-        }
+        
         console.timeEnd('preprocess');
         console.log(`${this.READER_NAME} Frazės paruoštos paieškai:`, this.phrasesMap.size);
     }
 
     findPhrases(text) {
-		if (!this.phrasesMap.size) {
-			throw new Error('PhraseReader neinicializuotas. Pirma iškvieskite initialize()');
-		}
-	
-		const foundPhrases = [];
-		
-		// Svarbu: tekstą paverčiame į mažąsias raides ir koduojame vienodai
-		const searchText = text.toLowerCase().normalize('NFD');
-		
-		console.log(`${this.READER_NAME} Teksto pavyzdys (pirmi 100 simboliai):`, searchText.substring(0, 100));
-	
-		// Ieškome kiekvienos frazės
-		for (const [phrase, metadata] of this.phrasesMap) {
-			// Svarbu: frazę paverčiame į mažąsias raides ir koduojame vienodai
-			const searchPhrase = phrase.toLowerCase().normalize('NFD');
-			
-			console.log(`${this.READER_NAME} Ieškoma frazė:`, {
-				originali: phrase,
-				paieškos: searchPhrase
-			});
-	
-			let position = -1;
-			while ((position = searchText.indexOf(searchPhrase, position + 1)) !== -1) {
-				// Tikriname žodžių ribas
-				const beforeChar = position > 0 ? searchText[position - 1] : ' ';
-				const afterChar = position + searchPhrase.length < searchText.length ? 
-					searchText[position + searchPhrase.length] : ' ';
-				
-				if (this.isWordBoundary(beforeChar) && this.isWordBoundary(afterChar)) {
-					foundPhrases.push({
-						text: phrase, // Išsaugome originalią frazę
-						start: position,
-						end: position + searchPhrase.length,
-						type: metadata['kalbos dalis'],
-						cerf: metadata.CERF,
-						translation: metadata.vertimas
-					});
-					console.log(`${this.READER_NAME} Rasta frazė:`, {
-						fraze: phrase,
-						pozicija: position,
-						kontekstas: searchText.substring(
-							Math.max(0, position - 20),
-							Math.min(searchText.length, position + searchPhrase.length + 20)
-						)
-					});
-				}
-			}
-		}
+        console.time('phraseSearch');
+        if (!this.phrasesMap.size) {
+            throw new Error('PhraseReader neinicializuotas. Pirma iškvieskite initialize()');
+        }
 
-    // Rūšiuojame pagal poziciją tekste
-    foundPhrases.sort((a, b) => a.start - b.start);
-    
-    console.log(`${this.READER_NAME} Rasta frazių:`, foundPhrases.length);
-    return foundPhrases;
-}
+        const foundPhrases = [];
+        
+        // Svarbu: tekstą paverčiame į mažąsias raides ir koduojame vienodai
+        const searchText = text.toLowerCase().normalize('NFD');
+        
+        console.log(`${this.READER_NAME} Teksto pavyzdys (pirmi 100 simboliai):`, searchText.substring(0, 100));
 
-            // Progreso sekimas
-            processedChars += phrase.length;
-            if (processedChars % 1000000 === 0) { // Kas milijoną simbolių
-                console.log(`${this.READER_NAME} Apdorota ${Math.round(processedChars/totalChars*100)}%`);
+        // Ieškome kiekvienos frazės
+        for (const [phrase, metadata] of this.phrasesMap) {
+            // Svarbu: frazę paverčiame į mažąsias raides ir koduojame vienodai
+            const searchPhrase = phrase.toLowerCase().normalize('NFD');
+            
+            console.log(`${this.READER_NAME} Ieškoma frazė:`, {
+                originali: phrase,
+                paieškos: searchPhrase
+            });
+
+            let position = -1;
+            while ((position = searchText.indexOf(searchPhrase, position + 1)) !== -1) {
+                // Tikriname žodžių ribas
+                const beforeChar = position > 0 ? searchText[position - 1] : ' ';
+                const afterChar = position + searchPhrase.length < searchText.length ? 
+                    searchText[position + searchPhrase.length] : ' ';
+                
+                if (this.isWordBoundary(beforeChar) && this.isWordBoundary(afterChar)) {
+                    foundPhrases.push({
+                        text: phrase, // Išsaugome originalią frazę
+                        start: position,
+                        end: position + searchPhrase.length,
+                        type: metadata['kalbos dalis'],
+                        cerf: metadata.CERF,
+                        translation: metadata.vertimas
+                    });
+                    console.log(`${this.READER_NAME} Rasta frazė:`, {
+                        fraze: phrase,
+                        pozicija: position,
+                        kontekstas: searchText.substring(
+                            Math.max(0, position - 20),
+                            Math.min(searchText.length, position + searchPhrase.length + 20)
+                        )
+                    });
+                }
             }
         }
 
