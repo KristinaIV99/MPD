@@ -26,18 +26,15 @@ export class PhraseReader {
                 this.phrases = JSON.parse(text);
                 
                 // Rodome detalią informaciją apie žodyną
-                console.log(`${this.READER_NAME} Žodyno turinys:`, this.phrases);
-                console.log(`${this.READER_NAME} Frazių skaičius:`, Object.keys(this.phrases).length);
-                
-                // Rodome kiekvienos frazės informaciją
-                Object.entries(this.phrases).forEach(([key, value]) => {
-                    console.log(`${this.READER_NAME} Frazė:`, {
-                        frazė: key,
-                        kalbosDalis: value['kalbos dalis'],
-                        CERF: value.CERF,
-                        vertimas: value.vertimas
-                    });
-                });
+                console.log(`${this.READER_NAME} Žodyno dydis:`, text.length, 'baitų');
+                const sample = Object.keys(this.phrases).slice(0, 3);
+                console.log(`${this.READER_NAME} Pavyzdinės frazės (pirmos 3):`, 
+                    sample.map(key => ({
+                        originalFraze: key,
+                        kodavimas: Array.from(key).map(c => `${c}:${c.charCodeAt(0)}`),
+                        duomenys: this.phrases[key]
+                    }))
+                );
                 
                 // Optimizuojame duomenų struktūrą paieškai
                 this.preprocessPhrases();
