@@ -6,9 +6,15 @@ export class WordCounter {
   }
 
   _cleanText(text) {
+    // Patikriname teksto ilgį prieš apdorojimą
+    console.log(`${this.COUNTER_NAME} Gautas tekstas, ilgis:`, text.length);
+    
     // Pašaliname visus skyrybos ženklus ir specialius simbolius
     const cleanText = text
-      .replace(/[.,\/#!$%\^&\*;:{}=_`~()«»\d]/g, ' ') // Pašaliname skyrybos ženklus ir skaičius
+      .replace(/["""«»]/g, ' ')                          // Pašaliname kabutes (", ", «, »)
+      .replace(/[?!…]/g, ' ')                            // Pašaliname klaustuką, šauktuką, daugtaškį
+      .replace(/[.,;:{}=()\[\]\/\\@#$%^&*+~`|]/g, ' ')   // Pašaliname kablelius ir kitus skyrybos ženklus, išskyrus brūkšnelį tarp žodžių
+      .replace(/[.,\/#!$%\^&\*;:{}=_`~()«»\d]/g, ' ')    // Pašaliname skyrybos ženklus ir skaičius
       .replace(/\s+/g, ' ')                              // Pakeičiame visus tarpus į vieną tarpą
       .trim()                                            // Pašaliname tarpus pradžioje ir gale
       .toLowerCase();                                    // Konvertuojame į mažąsias raides
@@ -23,22 +29,31 @@ export class WordCounter {
     const words = cleanText
       .split(' ')
       .filter(word => word.length > 0)
-      // Atnaujintas regex, kad įtrauktų švedų kalbos raides
-      .filter(word => /[a-zA-ZåäöÅÄÖ]/.test(word));
+      // Patvirtina, kad žodis turi bent vieną švedišką raidę ir gali turėti brūkšnelį
+      .filter(word => /^[a-zA-ZåäöÅÄÖéèêëîïûüÿçÉÈÊËÎÏÛÜŸÇ]+(-[a-zA-ZåäöÅÄÖéèêëîïûüÿçÉÈÊËÎÏÛÜŸÇ]+)*('?[a-zA-ZåäöÅÄÖéèêëîïûüÿçÉÈÊËÎÏÛÜŸÇ]*)*$/.test(word));
 
-    console.log(`${this.COUNTER_NAME} Pavyzdys žodžių:`, words.slice(0, 500));
+    console.log(`${this.COUNTER_NAME} Rasta žodžių:`, words.length);
+    console.log(`${this.COUNTER_NAME} Pirmi 20 žodžių:`, words.slice(0, 20));
+    console.log(`${this.COUNTER_NAME} Paskutiniai 20 žodžių:`, words.slice(-20));
     return words;
   }
 
   countWords(text) {
-    const words = this._getWords(text);
-    const count = words.length;
-    
-    return {
-      totalWords: count,
-      words: words
-    };
+    try {
+      console.log(`${this.COUNTER_NAME} Pradedamas žodžių skaičiavimas tekstui, ilgis:`, text.length);
+      const words = this._getWords(text);
+      const count = words.length;
+      console.log(`${this.COUNTER_NAME} Baigtas skaičiavimas, rasta žodžių:`, count);
+      return {
+        totalWords: count,
+        words: words
+      };
+    } catch (error) {
+      console.error(`${this.COUNTER_NAME} Klaida skaičiuojant žodžius:`, error);
+      throw error;
+    }
   }
+}
 
   getWordStatistics(words) {
     const wordFrequency = {};
