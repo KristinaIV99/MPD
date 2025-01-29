@@ -99,83 +99,61 @@ export class PhraseReader {
     }
 
     findPhrases(text) {
-        console.time('phraseSearch');
-        const foundPhrases = [];
-        const searchText = text.toLowerCase();
-        
-        // Debug: patikriname tekstą dėl skandinaviškų raidžių
-        const hasScandLetters = this.hasScandinavianLetters(searchText);
-        console.log(`${this.READER_NAME} Ar tekste yra skandinaviškų raidžių:`, hasScandLetters);
-        if (hasScandLetters) {
-            const scandLetters = searchText.match(/[åäöÅÄÖ]/g);
-            console.log(`${this.READER_NAME} Skandinaviškos raidės tekste:`, scandLetters);
-        }
+		console.time('phraseSearch');
+		const foundPhrases = [];
+		const searchText = text.toLowerCase();
+		
+		// Debug: patikriname tekstą dėl skandinaviškų raidžių
+		const hasScandLetters = this.hasScandinavianLetters(searchText);
+		console.log(`${this.READER_NAME} Ar tekste yra skandinaviškų raidžių:`, hasScandLetters);
+		if (hasScandLetters) {
+			const scandLetters = searchText.match(/[åäöÅÄÖ]/g);
+			console.log(`${this.READER_NAME} Skandinaviškos raidės tekste:`, scandLetters);
+		}
 
-        // Einame per visas frazes žodyne
-        for (const [phrase, metadata] of this.phrasesMap) {
-            // Jei frazė turi skandinaviškas raides
-            if (metadata.hasScandinavian) {
-                try {
-                    console.log(`${this.READER_NAME} Ieškoma skandinaviška frazė:`, {
-                        originali: phrase,
-                        regex: metadata.scanRegex.regex,
-                        kodavimas: metadata.scanRegex.kodavimas
-                    });
-                    
-                    const pattern = metadata.scanRegex.regex;
-                    const regex = new RegExp(pattern, 'gi');
-                    let match;
-                    
-                    while ((match = regex.exec(searchText)) !== null) {
-                        console.log(`${this.READER_NAME} Rasta atitiktis:`, {
-                            rastas_tekstas: match[0],
-                            pozicija: match.index,
-                            kontekstas: searchText.substr(Math.max(0, match.index - 20), 40)
-                        });
-                        
-                        foundPhrases.push({
-                            text: phrase,
-                            start: match.index,
-                            end: match.index + match[0].length,
-                            type: metadata['kalbos dalis'],
-                            cerf: metadata.CERF,
-                            translation: metadata.vertimas
-                        });
-                    }
-                } catch (error) {
-                    console.error(`${this.READER_NAME} Klaida ieškant skandinaviškos frazės "${phrase}":`, error);
-                }
-            // Jei frazė neturi skandinaviškų raidžių    
-            } else {
-                const searchPhrase = phrase.toLowerCase();
-                let position = -1;
-                
-                while ((position = searchText.indexOf(searchPhrase, position + 1)) !== -1) {
-                    const beforeChar = position > 0 ? searchText[position - 1] : ' ';
-                    const afterChar = position + searchPhrase.length < searchText.length ? 
-                        searchText[position + searchPhrase.length] : ' ';
-                        
-                    if (this.isWordBoundary(beforeChar) && this.isWordBoundary(afterChar)) {
-                        foundPhrases.push({
-                            text: phrase,
-                            start: position,
-                            end: position + searchPhrase.length,
-                            type: metadata['kalbos dalis'],
-                            cerf: metadata.CERF,
-                            translation: metadata.vertimas
-                        });
-                    }
-                }
-            }
-        }
-
-        foundPhrases.sort((a, b) => a.start - b.start);
-        console.timeEnd('phraseSearch');
-        
-        console.log(`${this.READER_NAME} Rasta frazių:`, foundPhrases.length);
-        
-        return foundPhrases;
-    }
+		// Einame per visas frazes žodyne
+		for (const [phrase, metadata] of this.phrasesMap) {
+			const searchPhrase = phrase.toLowerCase();
+			let position = -1;
+			
+			while ((position = searchText.indexOf(searchPhrase, position + 1)) !== -1) {
+				const beforeChar = position > 0 ? searchText[position - 1] : ' ';
+				const afterChar = position + searchPhrase.length < searchText.length ? 
+					searchText[position + searchPhrase.length] : ' ';
+					
+				if (this.isWordBoundary(beforeChar) && this.isWordBoundary(afterChar)) {
+					// Tikriname ar yra tiesioginis vertimas
+					const hasTranslation = metadata.vertimas && metadata.vertimas.trim() !== '';
+					
+					if (metadata.hasScandinavian) {
+						console.log(`${this.READER_NAME} Rasta skandinaviška frazė:`, {
+							rastas_tekstas: searchPhrase,
+							pozicija: position,
+							kontekstas: searchText.substr(Math.max(0, position - 20), 40)
+						});
+					}
+					
+					foundPhrases.push({
+						text: phrase,
+						start: position,
+						end: position + searchPhrase.length,
+						type: metadata['kalbos dalis'],
+						cerf: metadata.CERF,
+						translation: hasTranslation ? metadata.vertimas : '-',
+						baseForm: metadata['bazinė forma'] || null,
+						baseTranslation: !hasTranslation && metadata['bazinė forma'] ? metadata.vertimas : null
+					});
+				}
+			}
+		}
+	
+		foundPhrases.sort((a, b) => a.start - b.start);
+		console.timeEnd('phraseSearch');
+		
+		console.log(`${this.READER_NAME} Rasta frazių:`, foundPhrases.length);
+		
+		return foundPhrases;
+	}
 
     isWordBoundary(char) {
         return /[\s.,!?;:"'()[\]{}<>\\\/\-—]/.test(char);
