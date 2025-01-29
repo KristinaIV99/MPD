@@ -56,7 +56,7 @@ export class PhraseReader {
         }
     }
 
-	iinitializeWorker() {
+	initializeWorker() {
 		if (typeof Worker !== 'undefined') {
 			const workerCode = `
 				function isWordBoundary(char) {
