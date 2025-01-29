@@ -56,11 +56,11 @@ export class PhraseReader {
         }
     }
 
-	initializeWorker() {
+	iinitializeWorker() {
 		if (typeof Worker !== 'undefined') {
 			const workerCode = `
 				function isWordBoundary(char) {
-					return /[\\s.,!?;:"'()\\[\\]{}<>\\\\\/\\-—]/.test(char);
+					return /[\s.,!?;:"'()\[\]{}<>\\\/\-—]/.test(char);
 				}
 
 				function hasScandinavianLetters(text) {
@@ -82,7 +82,7 @@ export class PhraseReader {
 					
 					for (const [phrase, metadata] of phrases) {
 						const hasScand = hasScandinavianLetters(phrase);
-						const words = phrase.toLowerCase().split(/\\s+/);
+						const words = phrase.toLowerCase().split(/\s+/);
 						let node = root;
 						
 						for (const word of words) {
@@ -95,7 +95,7 @@ export class PhraseReader {
 						node._isEnd = true;
 						node._phrase = phrase;
 						node._hasScand = hasScand;
-						node._lowerPhrase = phrase.toLowerCase(); // Išsaugome lowercase versiją
+						node._lowerPhrase = phrase.toLowerCase();
 						
 						phraseMap.set(phrase, {
 							...metadata,
@@ -136,6 +136,7 @@ export class PhraseReader {
 					if (word !== '') {
 						tokens.push({
 							word: word.toLowerCase(),
+							originalWord: word,
 							start,
 							end: text.length
 						});
@@ -152,7 +153,6 @@ export class PhraseReader {
 					const foundPhrases = [];
 					const lowerText = text.toLowerCase();
 					
-					// Skaičiuojame frazes su skandinaviškomis raidėmis
 					let scandPhraseCount = 0;
 					for (const [phrase, metadata] of phraseMap) {
 						if (metadata.hasScandinavian) scandPhraseCount++;
@@ -175,9 +175,7 @@ export class PhraseReader {
 								const afterChar = lastToken.end < text.length ? text[lastToken.end] : ' ';
 								
 								if (isWordBoundary(beforeChar) && isWordBoundary(afterChar)) {
-									// Specialus patikrinimas skandinaviškoms frazėms
 									if (node._hasScand) {
-										// Tikriname ar pilnai sutampa skandinaviška frazė
 										if (fullPhrase === node._lowerPhrase) {
 											console.log('Rasta skandinaviška frazė:', {
 												rastas_tekstas: node._phrase,
@@ -201,12 +199,13 @@ export class PhraseReader {
 									}
 								}
 							}
-						}	
-						
-						const sortedPhrases = foundPhrases.sort((a, b) => a.start - b.start);
-						console.log('Worker rado frazių:', sortedPhrases.length);
-						return sortedPhrases;
+						}
 					}
+					
+					const sortedPhrases = foundPhrases.sort((a, b) => a.start - b.start);
+					console.log('Worker rado frazių:', sortedPhrases.length);
+					return sortedPhrases;
+				}
 
 				self.onmessage = function(e) {
 					const { text, phrases } = e.data;
