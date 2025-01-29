@@ -5,24 +5,26 @@ import { WordReader } from './word-reader.js';
 
 class App {
   constructor() {
-    this.APP_NAME = '[App]';
-    this.reader = new TextReader();
-    this.counter = new WordCounter();
-    this.phraseReader = new PhraseReader();
-    this.wordReader = new WordReader
-       
-    // Inicializuojame PhraseReader
-    this.phraseReader.initialize().catch(error => {
-        console.error(`${this.APP_NAME} Klaida inicializuojant PhraseReader:`, error);
-    });
-    
-    this.wordReader.initialize().catch(error => {
-        console.error(`${this.APP_NAME} Klaida inicializuojant WordReader:`, error);
-    
-    console.log(`${this.APP_NAME} Konstruktorius inicializuotas`);
-    this.initUI();
-    this.bindEvents();
-    this.isProcessing = false;
+	  this.APP_NAME = '[App]';
+      this.reader = new TextReader();
+      this.counter = new WordCounter();
+      this.phraseReader = new PhraseReader();
+      this.wordReader = new WordReader(); // Pataisyta: pridėti skliaustai ir kabliataškis
+
+      // Inicializuojame PhraseReader
+      this.phraseReader.initialize().catch(error => {
+          console.error(`${this.APP_NAME} Klaida inicializuojant PhraseReader:`, error);
+      });
+      
+      // Inicializuojame WordReader
+      this.wordReader.initialize().catch(error => {
+          console.error(`${this.APP_NAME} Klaida inicializuojant WordReader:`, error);
+      }); // Pataisyta: uždaryti catch ir kabliataškį
+
+      console.log(`${this.APP_NAME} Konstruktorius inicializuotas`);
+      this.initUI();
+      this.bindEvents();
+      this.isProcessing = false;
   }
 
   initUI() {
@@ -112,7 +114,7 @@ class App {
     console.log(`${this.APP_NAME} Atnaujintas žodžių skaičius:`, count.totalWords);
   }
 
-  setContent(text, phrases = []) {  
+  setContent(text, phrases = [], words = []) {  
     const div = document.createElement('div');
     div.className = 'text-content';
     div.textContent = text;
