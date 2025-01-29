@@ -135,11 +135,14 @@ export class PhraseReader {
                         
                         foundPhrases.push({
                             text: phrase,
-                            start: match.index,
-                            end: match.index + match[0].length,
-                            type: metadata['kalbos dalis'],
-                            cerf: metadata.CERF,
-                            translation: metadata.vertimas
+                            start: position,
+                            end: position + searchPhrase.length,
+                            ...(metadata['kalbos dalis'] && { type: metadata['kalbos dalis'] }),
+							...(metadata.CERF && { cerf: metadata.CERF }),
+							...(metadata.vertimas && { translation: metadata.vertimas }),
+							...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
+							...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }),
+							...(metadata['uttryck'] && { uttryck: metadata['uttryck'] })
                         });
                     }
                 } catch (error) {
