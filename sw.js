@@ -5,6 +5,10 @@ const STATIC_ASSETS = [
   './manifest.json',
   './main.css',
   './text-reader.js',
+  './text-normalizer.js',
+  './word-counter.js',
+  './phrase-reader.js',
+  './word-reader.js',
   './main.js',
   './icons/icon-192x192.png',
   './icons/icon-512x512.png'
