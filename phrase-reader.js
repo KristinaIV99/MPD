@@ -179,88 +179,149 @@ export class PhraseReader {
 				}
 				
 				function searchWithTrie(text, phrases) {
-					console.log('Pradedama paieška su Trie');
-					console.log('Teksto ilgis:', text.length);
-					console.log('Frazių kiekis:', phrases.length);
+					console.log('========== DETALI PAIEŠKOS INFORMACIJA ==========');
+					console.log('TEKSTO ANALIZĖ:');
+					console.log('Pirmi 100 simboliai:', text.substring(0, 100));
+					console.log('Simbolių kodai pirmiems 10 simboliams:');
+					for(let i = 0; i < 10; i++) {
+					console.log(`Simbolis '${text[i]}' -> kodas: ${text.charCodeAt(i)}`);
+					}
 					
 					const { root, phraseMap } = buildTrie(phrases);
 					const tokens = tokenizeText(text);
 					const foundPhrases = [];
 					const lowerText = text.toLowerCase();
 					
-					console.log('Pradedama frazių paieška per žodžius');
+					// Pridedame apribojimus
+					const CHUNK_SIZE = 5000; // Kiek žodžių tikrinsime vienu metu
+					const MAX_TOKENS = 50000; // Maksimalus žodžių kiekis
+					const tokensToCheck = Math.min(tokens.length, MAX_TOKENS);
 					
-					for (let i = 0; i < tokens.length; i++) {
-						let node = root;
-						console.log('Tikrinamas pradinis žodis:', tokens[i].word);
+					console.log('APRIBOJIMAI:');
+					console.log(`Viso žodžių: ${tokens.length}`);
+					console.log(`Bus tikrinama žodžių: ${tokensToCheck}`);
+					console.log(`Gabalo dydis: ${CHUNK_SIZE}`);
+					
+					// Einame per tekstą gabalais
+					for (let startIdx = 0; startIdx < tokensToCheck; startIdx += CHUNK_SIZE) {
+						const endIdx = Math.min(startIdx + CHUNK_SIZE, tokensToCheck);
+						console.log(`\n===== APDOROJAMAS GABALAS ${startIdx}-${endIdx} =====`);
 						
-						for (let j = i; j < tokens.length; j++) {
-							const word = tokens[j].word;
-						if (!node[word]) {
-								console.log('Nerastas žodis Trie medyje:', word);
-								break;
-							}
+						for (let i = startIdx; i < endIdx; i++) {
+							let node = root;
+							console.log('\nTikriname žodį:', tokens[i].word);
+							console.log('Žodžio pozicija:', i);
 							
-							console.log('Rastas žodis Trie medyje:', word);
-							node = node[word];
+							// Ribojame kiek žodžių į priekį tikrinsime (max 5 žodžiai frazėje)
+							const maxLookAhead = Math.min(i + 5, tokens.length);
 							
-							if (node._isEnd) {
-								console.log('Rasta potenciali frazė:', node._phrase);
-							
-								const firstToken = tokens[i];
-								const lastToken = tokens[j];
-								const fullPhrase = lowerText.slice(firstToken.start, lastToken.end);
+							for (let j = i; j < maxLookAhead; j++) {
+								const word = tokens[j].word;
+								if (!node[word]) {
+									console.log(`Nerastas žodis Trie medyje: ${word}`);
+									break;
+								}
 								
-								console.log('Pilna rasta frazė:', fullPhrase);
-								console.log('Originali frazė:', node._phrase);
-								console.log('Ar turi skandinaviškas raides:', node._hasScand);
+								console.log(`Rastas žodis Trie medyje: ${word}`);
+								node = node[word];
 								
-								const beforeChar = firstToken.start > 0 ? text[firstToken.start - 1] : ' ';
-								const afterChar = lastToken.end < text.length ? text[lastToken.end] : ' ';
-								
-								console.log('Simbolis prieš frazę:', beforeChar);
-								console.log('Simbolis po frazės:', afterChar);
-								
-								if (isWordBoundary(beforeChar) && isWordBoundary(afterChar)) {
-									if (node._hasScand) {
-										console.log('Tikrinama skandinaviška frazė');
-										console.log('Rastas tekstas:', fullPhrase);
-										console.log('Tikrinama frazė:', node._lowerPhrase);
-										
-										if (fullPhrase === node._lowerPhrase) {
-											console.log('RASTA SKANDINAVIŠKA FRAZĖ!');
-											console.log('Frazė:', node._phrase);
-											console.log('Pozicija:', firstToken.start);
-											console.log('Kontekstas:', text.substr(Math.max(0, firstToken.start - 20), 40));
-											
-											const metadata = phraseMap.get(node._phrase);
-											foundPhrases.push({
-												text: node._phrase,
-												start: firstToken.start,
-												end: lastToken.end,
-												...(metadata['kalbos dalis'] && { type: metadata['kalbos dalis'] }),
-												...(metadata.CERF && { cerf: metadata.CERF }),
-												...(metadata.vertimas && { translation: metadata.vertimas }),
-												...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
-												...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }),
-												...(metadata['uttryck'] && { uttryck: metadata['uttryck'] })
+								if (node._isEnd) {
+									console.log('\n----- FRAZĖS TIKRINIMAS -----');
+									console.log('Potenciali frazė:', node._phrase);
+									
+									const firstToken = tokens[i];
+									const lastToken = tokens[j];
+									const fullPhrase = lowerText.slice(firstToken.start, lastToken.end);
+									
+									console.log('Rasta tekste:', fullPhrase);
+									console.log('Pozicijos:', {
+										pradžia: firstToken.start,
+										pabaiga: lastToken.end,
+										kontekstas: text.substr(Math.max(0, firstToken.start - 20), 40)
+									});
+									
+									const beforeChar = firstToken.start > 0 ? text[firstToken.start - 1] : ' ';
+									const afterChar = lastToken.end < text.length ? text[lastToken.end] : ' ';
+									
+									console.log('ŽODŽIŲ RIBŲ TIKRINIMAS:');
+									console.log('Simbolis prieš:', {
+										simbolis: beforeChar,
+										kodas: beforeChar.charCodeAt(0)
+									});
+									console.log('Simbolis po:', {
+										simbolis: afterChar,
+										kodas: afterChar.charCodeAt(0)
+									});
+									
+									if (isWordBoundary(beforeChar) && isWordBoundary(afterChar)) {
+										if (node._hasScand) {
+											console.log('\n----- SKANDINAVIŠKOS FRAZĖS TIKRINIMAS -----');
+											console.log('Originali frazė:', node._phrase);
+											console.log('Rasta tekste:', fullPhrase);
+											console.log('Palyginimas:', {
+												originaliMažosiomis: node._lowerPhrase,
+												rastaMažosiomis: fullPhrase
 											});
-										} else {
-											console.log('Frazė nesutampa tiksliai');
-											console.log('Rastas tekstas:', fullPhrase);
-											console.log('Ieškoma frazė:', node._lowerPhrase);
+											
+											if (fullPhrase === node._lowerPhrase) {
+												console.log('\n!!! RASTA SKANDINAVIŠKA FRAZĖ !!!');
+												console.log('Frazė:', node._phrase);
+												console.log('Pozicija:', firstToken.start);
+												
+												const metadata = phraseMap.get(node._phrase);
+												foundPhrases.push({
+													text: node._phrase,
+													start: firstToken.start,
+													end: lastToken.end,
+													...(metadata['kalbos dalis'] && { type: metadata['kalbos dalis'] }),
+													...(metadata.CERF && { cerf: metadata.CERF }),
+													...(metadata.vertimas && { translation: metadata.vertimas }),
+													...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
+													...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }),
+													...(metadata['uttryck'] && { uttryck: metadata['uttryck'] })
+												});
+											} else {
+												console.log('\nNESUTAPIMO ANALIZĖ:');
+												for(let k = 0; k < fullPhrase.length; k++) {
+													if(fullPhrase[k] !== node._lowerPhrase[k]) {
+														console.log(`Nesutampa pozicijoje ${k}:`, {
+														rastas: {
+																simbolis: fullPhrase[k],
+																kodas: fullPhrase.charCodeAt(k)
+															},
+															tikėtasi: {
+																simbolis: node._lowerPhrase[k],
+																kodas: node._lowerPhrase.charCodeAt(k)
+															}
+														});
+													}
+												}
+											}
 										}
+									} else {
+										console.log('Frazė atmesta - nėra tinkamų žodžių ribų');
 									}
-								} else {
-									console.log('Frazė atmesta - nėra žodžių ribų');
 								}
 							}
 						}
+						
+						console.log(`\nGabalo progresas: ${Math.round((endIdx / tokensToCheck) * 100)}%`);
 					}
 					
 					const sortedPhrases = foundPhrases.sort((a, b) => a.start - b.start);
-					console.log('Paieška baigta');
+					
+					console.log('\n========== PAIEŠKOS REZULTATAI ==========');
 					console.log('Rasta frazių:', sortedPhrases.length);
+					sortedPhrases.forEach((phrase, idx) => {
+						console.log(`Frazė ${idx + 1}:`, {
+							tekstas: phrase.text,
+							pradžia: phrase.start,
+							pabaiga: phrase.end,
+							tipas: phrase.type,
+							vertimas: phrase.translation
+						});
+					});
+					
 					return sortedPhrases;
 				}
 
