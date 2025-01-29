@@ -56,77 +56,124 @@ export class PhraseReader {
         }
     }
 
-    initializeWorker() {
-        if (typeof Worker !== 'undefined') {
-            const workerCode = `
-                function isWordBoundary(char) {
-                    return /[\\s.,!?;:"'()\\[\\]{}<>\\\\\/\\-—]/.test(char);
-                }
+	initializeWorker() {
+		if (typeof Worker !== 'undefined') {
+			const workerCode = `
+				function isWordBoundary(char) {
+					return /[\\s.,!?;:"'()\\[\\]{}<>\\\\\/\\-—]/.test(char);
+				}
 
-                function hasScandinavianLetters(text) {
-                    return /[åäöÅÄÖ]/.test(text);
-                }
+				function buildTrie(phrases) {
+					const root = {};
+					const phraseMap = new Map();
+					
+					for (const [phrase, metadata] of phrases) {
+						const words = phrase.toLowerCase().split(/\\s+/);
+						let node = root;
+						
+						for (const word of words) {
+							if (!node[word]) {
+								node[word] = {};
+							}
+							node = node[word];
+						}
+						
+						node._isEnd = true;
+						node._phrase = phrase;
+						phraseMap.set(phrase, metadata);
+					}
+					
+					return { root, phraseMap };
+				}
 
-                function searchPhrasesInWorker(searchText, phrases) {
-                    const foundPhrases = [];
-                    searchText = searchText.toLowerCase();
-                    
-                    const hasScandLetters = hasScandinavianLetters(searchText);
-                    
-                    // Grupuojame frazes pagal ilgį
-                    const phrasesByLength = new Map();
-                    for (const [phrase, metadata] of phrases) {
-                        const length = phrase.length;
-                        if (!phrasesByLength.has(length)) {
-                            phrasesByLength.set(length, []);
-                        }
-                        phrasesByLength.get(length).push([phrase, metadata]);
-                    }
-                    
-                    // Ieškome frazių pagal ilgį
-                    for (const [length, phraseGroup] of phrasesByLength) {
-                        if (length > searchText.length) continue;
-                        
-                        for (const [phrase, metadata] of phraseGroup) {
-                            const searchPhrase = phrase.toLowerCase();
-                            let position = -1;
-                            
-                            while ((position = searchText.indexOf(searchPhrase, position + 1)) !== -1) {
-                                const beforeChar = position > 0 ? searchText[position - 1] : ' ';
-                                const afterChar = position + searchPhrase.length < searchText.length ? 
-                                    searchText[position + searchPhrase.length] : ' ';
-                                    
-                                if (isWordBoundary(beforeChar) && isWordBoundary(afterChar)) {
-                                    const hasTranslation = metadata.vertimas && metadata.vertimas.trim() !== '';
-                                    
-                                    foundPhrases.push({
-                                        text: phrase,
-                                        start: position,
-                                        end: position + searchPhrase.length,
-                                        type: metadata['kalbos dalis'],
-                                        cerf: metadata.CERF,
-                                        translation: hasTranslation ? metadata.vertimas : '-',
-                                        baseForm: metadata['bazinė forma'] || null,
-                                        baseTranslation: metadata['bazė vertimas'] || null
-                                    });
-                                }
-                            }
-                        }
-                    }
-                    
-                    return foundPhrases.sort((a, b) => a.start - b.start);
-                }
+				function tokenizeText(text) {
+					const tokens = [];
+					let word = '';
+					let start = -1;
+					
+					for (let i = 0; i < text.length; i++) {
+						const char = text[i];
+						if (isWordBoundary(char)) {
+							if (word !== '') {
+								tokens.push({
+									word: word.toLowerCase(),
+									start,
+									end: i
+								});
+								word = '';
+								start = -1;
+							}
+						} else {
+							if (word === '') {
+								start = i;
+							}
+							word += char;
+						}
+					}
+					
+					if (word !== '') {
+						tokens.push({
+							word: word.toLowerCase(),
+							start,
+							end: text.length
+						});
+					}
+					
+					return tokens;
+				}
 
-                self.onmessage = function(e) {
-                    const { text, phrases } = e.data;
-                    const results = searchPhrasesInWorker(text, phrases);
-                    self.postMessage(results);
-                };
-            `;
-            const blob = new Blob([workerCode], { type: 'application/javascript' });
-            this.worker = new Worker(URL.createObjectURL(blob));
-        }
-    }
+				function searchWithTrie(text, phrases) {
+					const { root, phraseMap } = buildTrie(phrases);
+					const tokens = tokenizeText(text);
+					const foundPhrases = [];
+					
+					for (let i = 0; i < tokens.length; i++) {
+						let node = root;
+						for (let j = i; j < tokens.length; j++) {
+							const word = tokens[j].word;
+							if (!node[word]) break;
+							
+							node = node[word];
+							if (node._isEnd) {
+								const firstToken = tokens[i];
+								const lastToken = tokens[j];
+								
+								const beforeChar = firstToken.start > 0 ? text[firstToken.start - 1] : ' ';
+								const afterChar = lastToken.end < text.length ? text[lastToken.end] : ' ';
+								
+								if (isWordBoundary(beforeChar) && isWordBoundary(afterChar)) {
+									const metadata = phraseMap.get(node._phrase);
+									const hasTranslation = metadata.vertimas && metadata.vertimas.trim() !== '';
+									
+									foundPhrases.push({
+										text: node._phrase,
+										start: firstToken.start,
+										end: lastToken.end,
+										type: metadata['kalbos dalis'],
+										cerf: metadata.CERF,
+										translation: hasTranslation ? metadata.vertimas : '-',
+										baseForm: metadata['bazinė forma'] || null,
+										baseTranslation: metadata['bazė vertimas'] || null,
+										uttryck: metadata['uttryck'] || null
+									});
+								}
+							}
+						}
+					}
+					
+					return foundPhrases.sort((a, b) => a.start - b.start);
+				}
+
+				self.onmessage = function(e) {
+					const { text, phrases } = e.data;
+					const results = searchWithTrie(text, phrases);
+					self.postMessage(results);
+				};
+			`;
+			const blob = new Blob([workerCode], { type: 'application/javascript' });
+			this.worker = new Worker(URL.createObjectURL(blob));
+		}
+	}
 
     hasScandinavianLetters(text) {
         return /[åäöÅÄÖ]/.test(text);
