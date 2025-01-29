@@ -299,9 +299,17 @@ export class PhraseReader {
         foundPhrases.sort((a, b) => a.start - b.start);
         console.timeEnd('phraseSearch');
         
-        console.log(`${this.READER_NAME} Rasta frazių:`, foundPhrases.length);
-        
-        return foundPhrases;
+        console.log(`${this.READER_NAME} Rastos frazės:`, 
+			foundPhrases.map(phrase => ({
+				frazė: phrase.text,
+				pozicija: phrase.start,
+				vertimas: phrase.translation,
+				tipas: phrase.type,
+				lygis: phrase.cerf
+			}))
+		);
+		
+		return foundPhrases;
     }
 
     async findPhrasesWithWorker(text) {
