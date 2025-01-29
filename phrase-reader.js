@@ -116,22 +116,13 @@ export class PhraseReader {
             // Jei frazė turi skandinaviškas raides
             if (metadata.hasScandinavian) {
                 try {
-                    console.log(`${this.READER_NAME} Ieškoma skandinaviška frazė:`, {
-                        originali: phrase,
-                        regex: metadata.scanRegex.regex,
-                        kodavimas: metadata.scanRegex.kodavimas
-                    });
-                    
-                    const pattern = metadata.scanRegex.regex;
-                    const regex = new RegExp(pattern, 'gi');
-                    let match;
-                    
-                    while ((match = regex.exec(searchText)) !== null) {
-                        console.log(`${this.READER_NAME} Rasta atitiktis:`, {
-                            rastas_tekstas: match[0],
-                            pozicija: match.index,
-                            kontekstas: searchText.substr(Math.max(0, match.index - 20), 40)
-                        });
+                    const searchPhrase = phrase.toLowerCase();
+                let position = -1;
+                
+                while ((position = searchText.indexOf(searchPhrase, position + 1)) !== -1) {
+                    const beforeChar = position > 0 ? searchText[position - 1] : ' ';
+                    const afterChar = position + searchPhrase.length < searchText.length ? 
+                        searchText[position + searchPhrase.length] : ' ';
                         
                         foundPhrases.push({
                             text: phrase,
@@ -143,7 +134,8 @@ export class PhraseReader {
 							...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
 							...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }),
 							...(metadata['uttryck'] && { uttryck: metadata['uttryck'] })
-                        });
+							});
+						}
                     }
                 } catch (error) {
                     console.error(`${this.READER_NAME} Klaida ieškant skandinaviškos frazės "${phrase}":`, error);
