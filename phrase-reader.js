@@ -141,7 +141,7 @@ export class PhraseReader {
 						cerf: metadata.CERF,
 						translation: hasTranslation ? metadata.vertimas : '-',
 						baseForm: metadata['bazinė forma'] || null,
-						baseTranslation: !hasTranslation ? metadata['bazė vertimas'] : null
+						baseTranslation: metadata['bazė vertimas'] || null
 					});
 				}
 			}
