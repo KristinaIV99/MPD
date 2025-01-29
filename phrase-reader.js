@@ -93,21 +93,13 @@ export class PhraseReader {
 						}
 						
 						node._isEnd = true;
-						node._phrase = phrase;
+						node._phrase = phrase;  // Išsaugome originalią frazę
 						node._hasScand = hasScand;
-						
-						const phraseData = {
+						phraseMap.set(phrase, {
 							...metadata,
-							length: phrase.length,
-							words: words.length,
-							hasScandinavian: hasScand
-						};
-						
-						if (hasScand) {
-							phraseData.scanRegex = createScandinavianRegex(phrase);
-						}
-						
-						phraseMap.set(phrase, phraseData);
+							hasScandinavian: hasScand,
+							originalPhrase: phrase  // Išsaugome originalią frazę žemėlapyje
+						});
 					}
 					
 					return { root, phraseMap };
@@ -118,19 +110,13 @@ export class PhraseReader {
 					let word = '';
 					let start = -1;
 					
-                    // Patikriname skandinaviškas raides
-					const hasScandLetters = /[åäöÅÄÖ]/.test(text);
-					if (hasScandLetters) {
-						const scandLetters = text.match(/[åäöÅÄÖ]/g);
-						console.log('Skandinaviškos raidės tekste:', scandLetters);
-					}
-					
 					for (let i = 0; i < text.length; i++) {
 						const char = text[i];
 						if (isWordBoundary(char)) {
 							if (word !== '') {
 								tokens.push({
 									word: word.toLowerCase(),
+									originalWord: word,
 									start,
 									end: i
 								});
@@ -155,7 +141,7 @@ export class PhraseReader {
 					
 					return tokens;
 				}
-
+				
 				function searchWithTrie(text, phrases) {
 					console.log('Worker pradeda paiešką. Teksto ilgis:', text.length);
 					
@@ -385,22 +371,19 @@ export class PhraseReader {
 		console.log(`${this.READER_NAME} Worker pradeda darbą`);
 		return new Promise((resolve) => {
 			this.worker.onmessage = (e) => {
-				console.log(`${this.READER_NAME} Worker baigė darbą, rasta frazių:`, e.data.length);
-				console.log(`${this.READER_NAME} Worker rastos frazės:`, 
-					e.data.map(phrase => ({
-						frazė: phrase.text,
-						pozicija: phrase.start,
-						vertimas: phrase.translation,
-						tipas: phrase.type,
-						lygis: phrase.cerf
-					}))
-				);
-				resolve(e.data);
+				const results = e.data;
+				console.log(`${this.READER_NAME} Worker rezultatai:`, {
+					rastosSkandinaviškosFrazės: results.filter(r => hasScandinavianLetters(r.text)),
+					visosFrazės: results
+				});
+				resolve(results);
 			};
-			this.worker.postMessage({ 
-				text, 
-				phrases: Array.from(this.phrasesMap.entries()) 
-			});
+			// Įsitikiname, kad perduodame originalias frazes
+			const phrasesArray = Array.from(this.phrasesMap.entries());
+			console.log(`${this.READER_NAME} Perduodamos frazės Worker'iui:`, 
+				phrasesArray.filter(([phrase]) => hasScandinavianLetters(phrase))
+			);
+			this.worker.postMessage({ text, phrases: phrasesArray });
 		});
 	}
 
