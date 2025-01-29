@@ -1,6 +1,7 @@
 import { TextReader } from './text-reader.js';
 import { WordCounter } from './word-counter.js';
 import { PhraseReader } from './phrase-reader.js';
+import { WordReader } from './word-reader.js';
 
 class App {
   constructor() {
@@ -8,11 +9,15 @@ class App {
     this.reader = new TextReader();
     this.counter = new WordCounter();
     this.phraseReader = new PhraseReader();
+    this.wordReader = new WordReader
        
     // Inicializuojame PhraseReader
     this.phraseReader.initialize().catch(error => {
         console.error(`${this.APP_NAME} Klaida inicializuojant PhraseReader:`, error);
     });
+    
+    this.wordReader.initialize().catch(error => {
+        console.error(`${this.APP_NAME} Klaida inicializuojant WordReader:`, error);
     
     console.log(`${this.APP_NAME} Konstruktorius inicializuotas`);
     this.initUI();
@@ -72,7 +77,11 @@ class App {
       const phraseResults = this.phraseReader.processText(text);
       console.log(`${this.APP_NAME} Rastos frazės:`, phraseResults.phrases);
 
-      this.setContent(text, phraseResults.phrases);
+      // TREČIA: Ieškome pavienių žodžių
+      const wordResults = this.wordReader.processText(text);
+      console.log(`${this.APP_NAME} Rasti žodžiai:`, wordResults.words);
+
+      this.setContent(text, phraseResults.phrases, wordResults.words);
       console.log(`${this.APP_NAME} Teksto turinys sėkmingai įkeltas`);
     } catch(error) {
       console.error(`${this.APP_NAME} Failo apdorojimo klaida:`, error);
@@ -115,6 +124,17 @@ class App {
                 text: p.text,
                 pozicija: `${p.start}-${p.end}`,
                 tipas: p.type
+            }))
+        );
+    }
+    
+    // Jei yra rastų žodžių, išvedame juos į konsolę
+    if (words.length > 0) {
+        console.log(`${this.APP_NAME} Rasti žodžiai tekste:`, 
+            words.map(w => ({
+                text: w.text,
+                pozicija: `${w.start}-${w.end}`,
+                tipas: w.type
             }))
         );
     }
