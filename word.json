@@ -1,122 +1,135 @@
 {
-    "jag_pron": {
-        "kalbos dalis": "pron",
-        "vertimas": "aš",
-        "CERF": "A1",
-        "base_word": "jag"
-    },
     "jag_subst": {
         "kalbos dalis": "subst",
         "vertimas": "perkūnija",
-        "CERF": "A1",
-        "base_word": "jag"
+        "bazinė forma": "jag",
+        "bazė vertimas": "jag",
+        "CERF": "A1"
     },
     "är_verb": {
         "kalbos dalis": "pron",
         "vertimas": "yra",
-        "CERF": "A1",
-        "base_word": "är"
+        "bazinė forma": "är",
+        "bazė vertimas": "är",
+        "CERF": "A1"
     },
     "ett_verb": {
         "kalbos dalis": "pron",
         "vertimas": "yra",
-        "CERF": "A1",
-        "base_word": "ett"
+        "bazinė forma": "ett",
+        "bazė vertimas": "ett",
+        "CERF": "A1"
     },
     "på_subst": {
         "kalbos dalis": "subst",
         "vertimas": "perkūnija",
-        "CERF": "A1",
-        "base_word": "på"
+        "bazinė forma": "på",
+        "bazė vertimas": "på",
+        "CERF": "A1"
     },
     "de_verb": {
         "kalbos dalis": "pron",
         "vertimas": "yra",
-        "CERF": "A1",
-        "base_word": "de"
+        "bazinė forma": "de",
+        "bazė vertimas": "de",
+        "CERF": "A1"
     },
     "hon_pron": {
         "kalbos dalis": "pron",
         "vertimas": "ji",
-        "CERF": "A1",
-        "base_word": "hon"
+        "bazinė forma": "hon",
+        "bazė vertimas": "hon",
+        "CERF": "A1"
     },
     "för_pron": {
         "kalbos dalis": "pron",
         "vertimas": "ji",
-        "CERF": "A1",
-        "base_word": "för"
+        "bazinė forma": "för",
+        "bazė vertimas": "för",
+        "CERF": "A1"
     },
     "när_pron": {
         "kalbos dalis": "pron",
         "vertimas": "ji",
-        "CERF": "A1",
-        "base_word": "när"
+        "bazinė forma": "när",
+        "bazė vertimas": "när",
+        "CERF": "A1"
     },
     "åska_verb": {
         "kalbos dalis": "subst",
         "vertimas": "perkūnija",
-        "CERF": "A1",
-        "base_word": "åska"
+        "bazinė forma": "åska",
+        "bazė vertimas": "åska",
+        "CERF": "A1"
     },
     "så_adv": {
         "kalbos dalis": "adv",
         "vertimas": "taip",
-        "CERF": "A1",
-        "base_word": "så"
+        "bazinė forma": "så",
+        "bazė vertimas": "så",
+        "CERF": "A1"
     },
     "på_prep": {
         "kalbos dalis": "prep",
         "vertimas": "ant",
-        "CERF": "A1",
-        "base_word": "på"
+        "bazinė forma": "på",
+        "bazė vertimas": "på",
+        "CERF": "A1"
     },
     "går_verb": {
         "kalbos dalis": "verb",
         "vertimas": "eiti",
-        "CERF": "A1",
-        "base_word": "går"
+        "bazinė forma": "går",
+        "bazė vertimas": "går",
+        "CERF": "A1"
     },
     "ö_subst": {
         "kalbos dalis": "subst",
         "vertimas": "sala",
-        "CERF": "A1",
-        "base_word": "ö"
+        "bazinė forma": "ö",
+        "bazė vertimas": "ö",
+        "CERF": "A1"
     },
     "gå_verb": {
         "kalbos dalis": "verb",
         "vertimas": "eiti",
-        "CERF": "A1",
-        "base_word": "gå"
+        "bazinė forma": "gå",
+        "bazė vertimas": "gå",
+        "CERF": "A1"
     },
     "ut_adv": {
         "kalbos dalis": "adv",
         "vertimas": "lauk",
-        "CERF": "A1",
-        "base_word": "ut"
+        "bazinė forma": "ut",
+        "bazė vertimas": "ut",
+        "CERF": "A1"
     },
     "er_pron": {
         "kalbos dalis": "pron",
         "vertimas": "jūs",
-        "CERF": "A1",
-        "base_word": "er"
+        "bazinė forma": "er",
+        "bazė vertimas": "er",
+        "CERF": "A1"
     },
     "ör_subst": {
         "kalbos dalis": "subst",
         "vertimas": "ėras",
-        "CERF": "A1",
-        "base_word": "ör"
+        "bazinė forma": "ör",
+        "bazė vertimas": "ör",
+        "CERF": "A1"
     },
     "öra_subst": {
         "kalbos dalis": "subst",
         "vertimas": "ausis",
-        "CERF": "A1",
-        "base_word": "öra"
+        "bazinė forma": "öra",
+        "bazė vertimas": "öra",
+        "CERF": "A1"
     },
     "år_subst": {
         "kalbos dalis": "subst",
         "vertimas": "metai",
-        "CERF": "A1",
-        "base_word": "år"
+        "bazinė forma": "år",
+        "bazė vertimas": "år",
+        "CERF": "A1"
     }
 }
