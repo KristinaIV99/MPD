@@ -63,11 +63,25 @@ export class PhraseReader {
 					return /[\\s.,!?;:"'()\\[\\]{}<>\\\\\/\\-—]/.test(char);
 				}
 
+				function hasScandinavianLetters(text) {
+					return /[åäöÅÄÖ]/.test(text);
+				}
+
+				function createScandinavianRegex(phrase) {
+					const regexPattern = phrase.toLowerCase();
+					console.log('Sukurtas regex šablonas frazei "' + phrase + '":', regexPattern);
+					return {
+						originali: phrase,
+						regex: regexPattern
+					};
+				}
+
 				function buildTrie(phrases) {
 					const root = {};
 					const phraseMap = new Map();
 					
 					for (const [phrase, metadata] of phrases) {
+						const hasScand = hasScandinavianLetters(phrase);
 						const words = phrase.toLowerCase().split(/\\s+/);
 						let node = root;
 						
@@ -80,7 +94,20 @@ export class PhraseReader {
 						
 						node._isEnd = true;
 						node._phrase = phrase;
-						phraseMap.set(phrase, metadata);
+						node._hasScand = hasScand;
+						
+						const phraseData = {
+							...metadata,
+							length: phrase.length,
+							words: words.length,
+							hasScandinavian: hasScand
+						};
+						
+						if (hasScand) {
+							phraseData.scanRegex = createScandinavianRegex(phrase);
+						}
+						
+						phraseMap.set(phrase, phraseData);
 					}
 					
 					return { root, phraseMap };
@@ -90,6 +117,13 @@ export class PhraseReader {
 					const tokens = [];
 					let word = '';
 					let start = -1;
+					
+                    // Patikriname skandinaviškas raides
+					const hasScandLetters = /[åäöÅÄÖ]/.test(text);
+					if (hasScandLetters) {
+						const scandLetters = text.match(/[åäöÅÄÖ]/g);
+						console.log('Skandinaviškos raidės tekste:', scandLetters);
+					}
 					
 					for (let i = 0; i < text.length; i++) {
 						const char = text[i];
@@ -123,9 +157,18 @@ export class PhraseReader {
 				}
 
 				function searchWithTrie(text, phrases) {
+					console.log('Worker pradeda paiešką. Teksto ilgis:', text.length);
+					
 					const { root, phraseMap } = buildTrie(phrases);
 					const tokens = tokenizeText(text);
 					const foundPhrases = [];
+					
+					// Skaičiuojame frazes su skandinaviškomis raidėmis
+					let scandPhraseCount = 0;
+					for (const [phrase, metadata] of phraseMap) {
+						if (metadata.hasScandinavian) scandPhraseCount++;
+					}
+					console.log('Frazių su skandinaviškomis raidėmis:', scandPhraseCount);
 					
 					for (let i = 0; i < tokens.length; i++) {
 						let node = root;
@@ -145,23 +188,33 @@ export class PhraseReader {
 									const metadata = phraseMap.get(node._phrase);
 									const hasTranslation = metadata.vertimas && metadata.vertimas.trim() !== '';
 									
+									if (metadata.hasScandinavian) {
+										console.log('Rasta skandinaviška frazė:', {
+											rastas_tekstas: node._phrase,
+											pozicija: firstToken.start,
+											kontekstas: text.substr(Math.max(0, firstToken.start - 20), 40)
+										});
+									}
+									
 									foundPhrases.push({
 										text: node._phrase,
 										start: firstToken.start,
 										end: lastToken.end,
-										type: metadata['kalbos dalis'],
-										cerf: metadata.CERF,
-										translation: hasTranslation ? metadata.vertimas : '-',
-										baseForm: metadata['bazinė forma'] || null,
-										baseTranslation: metadata['bazė vertimas'] || null,
-										uttryck: metadata['uttryck'] || null
+										...(metadata['kalbos dalis'] && { type: metadata['kalbos dalis'] }),
+										...(metadata.CERF && { cerf: metadata.CERF }),
+										...(metadata.vertimas && { translation: metadata.vertimas }),
+										...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
+										...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }), 
+										...(metadata['uttryck'] && { uttryck: metadata['uttryck'] })
 									});
 								}
 							}
 						}
 					}
 					
-					return foundPhrases.sort((a, b) => a.start - b.start);
+					const sortedPhrases = foundPhrases.sort((a, b) => a.start - b.start);
+					console.log('Worker rado frazių:', sortedPhrases.length);
+					return sortedPhrases;
 				}
 
 				self.onmessage = function(e) {
@@ -300,12 +353,12 @@ export class PhraseReader {
                             text: phrase,
                             start: position,
                             end: position + searchPhrase.length,
-                            type: metadata['kalbos dalis'],
-                            cerf: metadata.CERF,
-                            translation: hasTranslation ? metadata.vertimas : '-',
-                            baseForm: metadata['bazinė forma'] || null,
-                            baseTranslation: metadata['bazė vertimas'] || null,
-                            uttryck: metadata['uttryck'] || null
+                            ...(metadata['kalbos dalis'] && { type: metadata['kalbos dalis'] }),
+							...(metadata.CERF && { cerf: metadata.CERF }),
+							...(metadata.vertimas && { translation: metadata.vertimas }),
+							...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
+							...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }),
+							...(metadata['uttryck'] && { uttryck: metadata['uttryck'] })
                         });
                     }
                 }
