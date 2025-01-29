@@ -372,17 +372,20 @@ export class PhraseReader {
 		return new Promise((resolve) => {
 			this.worker.onmessage = (e) => {
 				const results = e.data;
-				console.log(`${this.READER_NAME} Worker rezultatai:`, {
-					rastosSkandinaviškosFrazės: results.filter(r => hasScandinavianLetters(r.text)),
-					visosFrazės: results
-				});
+				console.log(`${this.READER_NAME} Worker baigė darbą, rasta frazių:`, results.length);
+				console.log(`${this.READER_NAME} Worker rastos frazės:`, 
+					results.map(phrase => ({
+						frazė: phrase.text,
+						pozicija: phrase.start,
+						vertimas: phrase.translation,
+						tipas: phrase.type,
+						lygis: phrase.cerf
+					}))
+				);
 				resolve(results);
 			};
 			// Įsitikiname, kad perduodame originalias frazes
 			const phrasesArray = Array.from(this.phrasesMap.entries());
-			console.log(`${this.READER_NAME} Perduodamos frazės Worker'iui:`, 
-				phrasesArray.filter(([phrase]) => hasScandinavianLetters(phrase))
-			);
 			this.worker.postMessage({ text, phrases: phrasesArray });
 		});
 	}
