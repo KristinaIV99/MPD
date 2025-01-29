@@ -117,26 +117,26 @@ export class PhraseReader {
             if (metadata.hasScandinavian) {
                 try {
                     const searchPhrase = phrase.toLowerCase();
-                let position = -1;
-                
-                while ((position = searchText.indexOf(searchPhrase, position + 1)) !== -1) {
-                    const beforeChar = position > 0 ? searchText[position - 1] : ' ';
-                    const afterChar = position + searchPhrase.length < searchText.length ? 
-                        searchText[position + searchPhrase.length] : ' ';
-                        
-                        foundPhrases.push({
-                            text: phrase,
-                            start: position,
-                            end: position + searchPhrase.length,
-                            ...(metadata['kalbos dalis'] && { type: metadata['kalbos dalis'] }),
-							...(metadata.CERF && { cerf: metadata.CERF }),
-							...(metadata.vertimas && { translation: metadata.vertimas }),
-							...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
-							...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }),
-							...(metadata['uttryck'] && { uttryck: metadata['uttryck'] })
+					let position = -1;
+					
+					while ((position = searchText.indexOf(searchPhrase, position + 1)) !== -1) {
+						const beforeChar = position > 0 ? searchText[position - 1] : ' ';
+						const afterChar = position + searchPhrase.length < searchText.length ? 
+							searchText[position + searchPhrase.length] : ' ';
+							
+							foundPhrases.push({
+								text: phrase,
+								start: position,
+								end: position + searchPhrase.length,
+								...(metadata['kalbos dalis'] && { type: metadata['kalbos dalis'] }),
+								...(metadata.CERF && { cerf: metadata.CERF }),
+								...(metadata.vertimas && { translation: metadata.vertimas }),
+								...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
+								...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }),
+								...(metadata['uttryck'] && { uttryck: metadata['uttryck'] })
 							});
 						}
-                    }
+					}
                 } catch (error) {
                     console.error(`${this.READER_NAME} Klaida ieškant skandinaviškos frazės "${phrase}":`, error);
                 }
