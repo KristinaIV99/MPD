@@ -19,7 +19,7 @@ class App {
       // Inicializuojame WordReader
       this.wordReader.initialize().catch(error => {
           console.error(`${this.APP_NAME} Klaida inicializuojant WordReader:`, error);
-      }); // Pataisyta: uždaryti catch ir kabliataškį
+      });
 
       console.log(`${this.APP_NAME} Konstruktorius inicializuotas`);
       this.initUI();
