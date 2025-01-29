@@ -1,3 +1,4 @@
+
 import { TextNormalizer } from './text-normalizer.js';
 
 export class WordReader {
@@ -29,8 +30,8 @@ export class WordReader {
                     const sample = Object.entries(this.words).slice(0, 5);
                     console.log(`${this.READER_NAME} Pavyzdiniai žodžiai:`, 
                         sample.map(([key, value]) => ({
-                            zodis: key,
-                            duomenys: value,
+                            zodis: key.split('_')[0], // Parodome žodį be sufikso
+                            tipas: key.split('_')[1],
                             arTuriSkandinav: this.hasScandinavianLetters(key)
                         }))
                     );
@@ -68,28 +69,37 @@ export class WordReader {
         
         const sortedWords = Object.entries(this.words)
             .filter(([key]) => {
+                const wordWithoutSuffix = key.split('_')[0];
                 const wordCount = key.trim().split(/\s+/).length;
-                return wordCount === 1;  // Changed to only accept single words
+                return wordCount === 1;  // Priimame tik pavienius žodžius
             })
-            .sort(([a], [b]) => b.length - a.length);
+            .sort(([a], [b]) => {
+                const aWord = a.split('_')[0];
+                const bWord = b.split('_')[0];
+                return bWord.length - aWord.length;
+            });
 
         for (const [key, value] of sortedWords) {
-            const hasScand = this.hasScandinavianLetters(key);
+            const [wordWithoutSuffix, type] = key.split('_');
+            const hasScand = this.hasScandinavianLetters(wordWithoutSuffix);
             const wordData = {
                 ...value,
-                length: key.length,
-                words: 1,  // Always 1 since we're dealing with single words
+                originalWord: key,
+                word: wordWithoutSuffix,
+                type: type,
+                length: wordWithoutSuffix.length,
+                words: 1,
                 hasScandinavian: hasScand
             };
             
             if (hasScand) {
-                wordData.scanRegex = this.createScandinavianRegex(key);
+                wordData.scanRegex = this.createScandinavianRegex(wordWithoutSuffix);
                 if (this.debug) {
                     console.log(`${this.READER_NAME} Ieškomas skandinaviškas žodis:`, wordData.scanRegex);
                 }
             }
             
-            this.wordsMap.set(key, wordData);
+            this.wordsMap.set(wordWithoutSuffix, wordData);
         }
         
         console.timeEnd('preprocess');
@@ -163,45 +173,47 @@ export class WordReader {
             for (const [word, metadata] of this.wordsMap) {
                 if (metadata.hasScandinavian) {
                     try {
-                        const searchWord = word.toLowerCase();
                         let position = -1;
                         
-                        while ((position = searchText.indexOf(searchWord, position + 1)) !== -1) {
+                        while ((position = searchText.indexOf(word.toLowerCase(), position + 1)) !== -1) {
                             const globalPosition = part.start + position;
                             const beforeChar = position > 0 ? searchText[position - 1] : ' ';
-                            const afterChar = position + searchWord.length < searchText.length ? 
-                                searchText[position + searchWord.length] : ' ';
+                            const afterChar = position + word.length < searchText.length ? 
+                                searchText[position + word.length] : ' ';
                                 
-                            foundWords.push({
-                                text: word,
-                                start: globalPosition,
-                                end: globalPosition + searchWord.length,
-                                ...(metadata['kalbos dalis'] && { type: metadata['kalbos dalis'] }),
-                                ...(metadata.CERF && { cerf: metadata.CERF }),
-                                ...(metadata.vertimas && { translation: metadata.vertimas }),
-                                ...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
-                                ...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }),
-                            });
+                            if (this.isWordBoundary(beforeChar) && this.isWordBoundary(afterChar)) {
+                                foundWords.push({
+                                    text: word,
+                                    originalWord: metadata.originalWord,
+                                    start: globalPosition,
+                                    end: globalPosition + word.length,
+                                    type: metadata.type,
+                                    ...(metadata.CERF && { cerf: metadata.CERF }),
+                                    ...(metadata.vertimas && { translation: metadata.vertimas }),
+                                    ...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
+                                    ...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }),
+                                });
+                            }
                         }
                     } catch (error) {
                         console.error(`${this.READER_NAME} Klaida ieškant skandinaviško žodžio "${word}":`, error);
                     }
                 } else {
-                    const searchWord = word.toLowerCase();
                     let position = -1;
                     
-                    while ((position = searchText.indexOf(searchWord, position + 1)) !== -1) {
+                    while ((position = searchText.indexOf(word.toLowerCase(), position + 1)) !== -1) {
                         const globalPosition = part.start + position;
                         const beforeChar = position > 0 ? searchText[position - 1] : ' ';
-                        const afterChar = position + searchWord.length < searchText.length ? 
-                            searchText[position + searchWord.length] : ' ';
+                        const afterChar = position + word.length < searchText.length ? 
+                            searchText[position + word.length] : ' ';
                             
                         if (this.isWordBoundary(beforeChar) && this.isWordBoundary(afterChar)) {
                             foundWords.push({
                                 text: word,
+                                originalWord: metadata.originalWord,
                                 start: globalPosition,
-                                end: globalPosition + searchWord.length,
-                                ...(metadata['kalbos dalis'] && { type: metadata['kalbos dalis'] }),
+                                end: globalPosition + word.length,
+                                type: metadata.type,
                                 ...(metadata.CERF && { cerf: metadata.CERF }),
                                 ...(metadata.vertimas && { translation: metadata.vertimas }),
                                 ...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
@@ -219,6 +231,10 @@ export class WordReader {
         console.log(`${this.READER_NAME} Rasta žodžių:`, foundWords.length);
         
         return foundWords;
+    }
+
+    isWordBoundary(char) {
+        return /[\s.,!?;:"'()[\]{}<>\\\/\-—]/.test(char);
     }
 
     processText(text, phrases = []) {
