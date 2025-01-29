@@ -232,6 +232,9 @@ export class PhraseReader {
     async findPhrases(text) {
         console.time('phraseSearch');
         
+		// Pridedame teksto ilgio patikrinimą
+		console.log(`${this.READER_NAME} Pradedama paieška tekste, ilgis:`, text.length);
+		
         // Normalizuojame tekstą tik vieną kartą
         let searchText = this.cachedNormalizedText.get(text);
         if (!searchText) {
@@ -243,9 +246,15 @@ export class PhraseReader {
         
         // Naudojame Web Worker dideliems tekstams
         if (this.worker && text.length > 10000) {
-            return await this.findPhrasesWithWorker(searchText);
+			console.log(`${this.READER_NAME} Tekstas per ilgas (${text.length} > 10000), naudojamas Worker`);
+            const workerResults = await this.findPhrasesWithWorker(searchText);
+			console.log(`${this.READER_NAME} Worker grąžino frazių:`, workerResults.length);
+			return workerResults;
         }
         
+		// Jei Worker neįsijungė, registruojame įprastą paiešką
+		console.log(`${this.READER_NAME} Vykdoma įprasta paieška`);
+		
         const hasScandLetters = this.hasScandinavianLetters(searchText);
         if (this.debug) {
             console.log(`${this.READER_NAME} Ar tekste yra skandinaviškų raidžių:`, hasScandLetters);
@@ -254,7 +263,14 @@ export class PhraseReader {
                 console.log(`${this.READER_NAME} Skandinaviškos raidės tekste:`, scandLetters);
             }
         }
-
+		
+		// Registruojame kiek frazių tikriname
+		let phraseCount = 0;
+		for (const [length, phrases] of this.phrasesByLength) {
+			phraseCount += phrases.size;
+		}
+		console.log(`${this.READER_NAME} Bus tikrinama frazių:`, phraseCount);
+	
         // Optimizuota paieška pagal frazių ilgį
         for (const [length, phrases] of this.phrasesByLength) {
             if (length > searchText.length) continue;
@@ -313,14 +329,27 @@ export class PhraseReader {
     }
 
     async findPhrasesWithWorker(text) {
-        return new Promise((resolve) => {
-            this.worker.onmessage = (e) => resolve(e.data);
-            this.worker.postMessage({ 
-                text, 
-                phrases: Array.from(this.phrasesMap.entries()) 
-            });
-        });
-    }
+		console.log(`${this.READER_NAME} Worker pradeda darbą`);
+		return new Promise((resolve) => {
+			this.worker.onmessage = (e) => {
+				console.log(`${this.READER_NAME} Worker baigė darbą, rasta frazių:`, e.data.length);
+				console.log(`${this.READER_NAME} Worker rastos frazės:`, 
+					e.data.map(phrase => ({
+						frazė: phrase.text,
+						pozicija: phrase.start,
+						vertimas: phrase.translation,
+						tipas: phrase.type,
+						lygis: phrase.cerf
+					}))
+				);
+				resolve(e.data);
+			};
+			this.worker.postMessage({ 
+				text, 
+				phrases: Array.from(this.phrasesMap.entries()) 
+			});
+		});
+	}
 
     isWordBoundary(char) {
         return /[\s.,!?;:"'()[\]{}<>\\\/\-—]/.test(char);
