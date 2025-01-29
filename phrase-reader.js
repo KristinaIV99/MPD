@@ -259,6 +259,7 @@ export class PhraseReader {
 												console.log("\\n!!! RASTA SKANDINAVIŠKA FRAZĖ !!!");
 												console.log("Frazė:", node._phrase);
 												console.log("Pozicija:", firstToken.start);
+												console.log("Kontekstas:", text.substr(Math.max(0, firstToken.start - 20), 40));
 												
 												const metadata = phraseMap.get(node._phrase);
 												foundPhrases.push({
@@ -281,8 +282,27 @@ export class PhraseReader {
 														console.log("  Rastas kodas:", fullPhrase.charCodeAt(k));
 														console.log("  Tikėtasi simbolis:", node._lowerPhrase[k]);
 														console.log("  Tikėtasi kodas:", node._lowerPhrase.charCodeAt(k));
-													}
-												}
+											}
+										} else {
+											// Jei ne skandinaviška frazė, bet vis tiek yra tinkama
+											if (fullPhrase === node._lowerPhrase) {
+												console.log("\\n----- RASTA PAPRASTA FRAZĖ -----");
+												console.log("Frazė:", node._phrase);
+												console.log("Pozicija:", firstToken.start);
+												console.log("Kontekstas:", text.substr(Math.max(0, firstToken.start - 20), 40));
+												
+												const metadata = phraseMap.get(node._phrase);
+												foundPhrases.push({
+													text: node._phrase,
+													start: firstToken.start,
+													end: lastToken.end,
+													...(metadata["kalbos dalis"] && { type: metadata["kalbos dalis"] }),
+													...(metadata.CERF && { cerf: metadata.CERF }),
+													...(metadata.vertimas && { translation: metadata.vertimas }),
+													...(metadata["bazinė forma"] && { baseForm: metadata["bazinė forma"] }),
+													...(metadata["bazė vertimas"] && { baseTranslation: metadata["bazė vertimas"] }),
+													...(metadata["uttryck"] && { uttryck: metadata["uttryck"] })
+												});
 											}
 										}
 									} else {
