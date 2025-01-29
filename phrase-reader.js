@@ -25,7 +25,6 @@ export class PhraseReader {
             try {
                 this.phrases = JSON.parse(text);
                 
-                // Parodome kelias pavyzdines frazes
                 if (this.debug) {
                     const sample = Object.entries(this.phrases).slice(0, 5);
                     console.log(`${this.READER_NAME} Pavyzdinės frazės:`, 
@@ -55,19 +54,18 @@ export class PhraseReader {
     }
 
     createScandinavianRegex(phrase) {
-		const regexPattern = phrase.toLowerCase();
-		console.log(`${this.READER_NAME} Sukurtas regex šablonas frazei "${phrase}":`, regexPattern);
-		
-		return {
-			originali: phrase,
-			regex: regexPattern
-		};
+        const regexPattern = phrase.toLowerCase();
+        console.log(`${this.READER_NAME} Sukurtas regex šablonas frazei "${phrase}":`, regexPattern);
+        
+        return {
+            originali: phrase,
+            regex: regexPattern
+        };
     }
 
     preprocessPhrases() {
         console.time('preprocess');
         
-        // Filtruojame ir rūšiuojame frazes
         const sortedPhrases = Object.entries(this.phrases)
             .filter(([key]) => {
                 const wordCount = key.trim().split(/\s+/).length;
@@ -75,7 +73,6 @@ export class PhraseReader {
             })
             .sort(([a], [b]) => b.length - a.length);
 
-        // Sukuriame regex šablonus skandinaviškoms frazėms
         for (const [key, value] of sortedPhrases) {
             const hasScand = this.hasScandinavianLetters(key);
             const phraseData = {
@@ -103,7 +100,6 @@ export class PhraseReader {
         const foundPhrases = [];
         const searchText = text.toLowerCase();
         
-        // Debug: patikriname tekstą dėl skandinaviškų raidžių
         const hasScandLetters = this.hasScandinavianLetters(searchText);
         console.log(`${this.READER_NAME} Ar tekste yra skandinaviškų raidžių:`, hasScandLetters);
         if (hasScandLetters) {
@@ -111,36 +107,32 @@ export class PhraseReader {
             console.log(`${this.READER_NAME} Skandinaviškos raidės tekste:`, scandLetters);
         }
 
-        // Einame per visas frazes žodyne
         for (const [phrase, metadata] of this.phrasesMap) {
-            // Jei frazė turi skandinaviškas raides
             if (metadata.hasScandinavian) {
                 try {
                     const searchPhrase = phrase.toLowerCase();
-					let position = -1;
-					
-					while ((position = searchText.indexOf(searchPhrase, position + 1)) !== -1) {
-						const beforeChar = position > 0 ? searchText[position - 1] : ' ';
-						const afterChar = position + searchPhrase.length < searchText.length ? 
-							searchText[position + searchPhrase.length] : ' ';
-							
-							foundPhrases.push({
-								text: phrase,
-								start: position,
-								end: position + searchPhrase.length,
-								...(metadata['kalbos dalis'] && { type: metadata['kalbos dalis'] }),
-								...(metadata.CERF && { cerf: metadata.CERF }),
-								...(metadata.vertimas && { translation: metadata.vertimas }),
-								...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
-								...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }),
-								...(metadata['uttryck'] && { uttryck: metadata['uttryck'] })
-							});
-						}
-					}
+                    let position = -1;
+                    
+                    while ((position = searchText.indexOf(searchPhrase, position + 1)) !== -1) {
+                        const beforeChar = position > 0 ? searchText[position - 1] : ' ';
+                        const afterChar = position + searchPhrase.length < searchText.length ? 
+                            searchText[position + searchPhrase.length] : ' ';
+                            
+                        foundPhrases.push({
+                            text: phrase,
+                            start: position,
+                            end: position + searchPhrase.length,
+                            ...(metadata['kalbos dalis'] && { type: metadata['kalbos dalis'] }),
+                            ...(metadata.CERF && { cerf: metadata.CERF }),
+                            ...(metadata.vertimas && { translation: metadata.vertimas }),
+                            ...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
+                            ...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }),
+                            ...(metadata['uttryck'] && { uttryck: metadata['uttryck'] })
+                        });
+                    }
                 } catch (error) {
                     console.error(`${this.READER_NAME} Klaida ieškant skandinaviškos frazės "${phrase}":`, error);
                 }
-            // Jei frazė neturi skandinaviškų raidžių    
             } else {
                 const searchPhrase = phrase.toLowerCase();
                 let position = -1;
@@ -156,11 +148,11 @@ export class PhraseReader {
                             start: position,
                             end: position + searchPhrase.length,
                             ...(metadata['kalbos dalis'] && { type: metadata['kalbos dalis'] }),
-							...(metadata.CERF && { cerf: metadata.CERF }),
-							...(metadata.vertimas && { translation: metadata.vertimas }),
-							...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
-							...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }),
-							...(metadata['uttryck'] && { uttryck: metadata['uttryck'] })
+                            ...(metadata.CERF && { cerf: metadata.CERF }),
+                            ...(metadata.vertimas && { translation: metadata.vertimas }),
+                            ...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
+                            ...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }),
+                            ...(metadata['uttryck'] && { uttryck: metadata['uttryck'] })
                         });
                     }
                 }
