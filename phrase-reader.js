@@ -55,18 +55,13 @@ export class PhraseReader {
     }
 
     createScandinavianRegex(phrase) {
-        const regexPattern = phrase.toLowerCase()
-            .replace(/å/g, '(å|a)')
-            .replace(/ä/g, '(ä|a)')
-            .replace(/ö/g, '(ö|o)');
-            
-        console.log(`${this.READER_NAME} Sukurtas regex šablonas frazei "${phrase}":`, regexPattern);
-        
-        return {
-            originali: phrase,
-            regex: regexPattern,
-            kodavimas: Array.from(phrase).map(c => `${c}:${c.charCodeAt(0)}`)
-        };
+		const regexPattern = phrase.toLowerCase();
+		console.log(`${this.READER_NAME} Sukurtas regex šablonas frazei "${phrase}":`, regexPattern);
+		
+		return {
+			originali: phrase,
+			regex: regexPattern
+		};
     }
 
     preprocessPhrases() {
