@@ -93,12 +93,14 @@ export class PhraseReader {
 						}
 						
 						node._isEnd = true;
-						node._phrase = phrase;  // Išsaugome originalią frazę
+						node._phrase = phrase;
 						node._hasScand = hasScand;
+						node._lowerPhrase = phrase.toLowerCase(); // Išsaugome lowercase versiją
+						
 						phraseMap.set(phrase, {
 							...metadata,
 							hasScandinavian: hasScand,
-							originalPhrase: phrase  // Išsaugome originalią frazę žemėlapyje
+							originalPhrase: phrase
 						});
 					}
 					
@@ -148,6 +150,7 @@ export class PhraseReader {
 					const { root, phraseMap } = buildTrie(phrases);
 					const tokens = tokenizeText(text);
 					const foundPhrases = [];
+					const lowerText = text.toLowerCase();
 					
 					// Skaičiuojame frazes su skandinaviškomis raidėmis
 					let scandPhraseCount = 0;
@@ -166,42 +169,44 @@ export class PhraseReader {
 							if (node._isEnd) {
 								const firstToken = tokens[i];
 								const lastToken = tokens[j];
+								const fullPhrase = lowerText.slice(firstToken.start, lastToken.end);
 								
 								const beforeChar = firstToken.start > 0 ? text[firstToken.start - 1] : ' ';
 								const afterChar = lastToken.end < text.length ? text[lastToken.end] : ' ';
 								
 								if (isWordBoundary(beforeChar) && isWordBoundary(afterChar)) {
-									const metadata = phraseMap.get(node._phrase);
-									const hasTranslation = metadata.vertimas && metadata.vertimas.trim() !== '';
-									
-									if (metadata.hasScandinavian) {
-										console.log('Rasta skandinaviška frazė:', {
-											rastas_tekstas: node._phrase,
-											pozicija: firstToken.start,
-											kontekstas: text.substr(Math.max(0, firstToken.start - 20), 40)
-										});
+									// Specialus patikrinimas skandinaviškoms frazėms
+									if (node._hasScand) {
+										// Tikriname ar pilnai sutampa skandinaviška frazė
+										if (fullPhrase === node._lowerPhrase) {
+											console.log('Rasta skandinaviška frazė:', {
+												rastas_tekstas: node._phrase,
+												pozicija: firstToken.start,
+												kontekstas: text.substr(Math.max(0, firstToken.start - 20), 40)
+											});
+											
+											const metadata = phraseMap.get(node._phrase);
+											foundPhrases.push({
+												text: node._phrase,
+												start: firstToken.start,
+												end: lastToken.end,
+												...(metadata['kalbos dalis'] && { type: metadata['kalbos dalis'] }),
+												...(metadata.CERF && { cerf: metadata.CERF }),
+												...(metadata.vertimas && { translation: metadata.vertimas }),
+												...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
+												...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }), 
+												...(metadata['uttryck'] && { uttryck: metadata['uttryck'] })
+											});
+										}
 									}
-									
-									foundPhrases.push({
-										text: node._phrase,
-										start: firstToken.start,
-										end: lastToken.end,
-										...(metadata['kalbos dalis'] && { type: metadata['kalbos dalis'] }),
-										...(metadata.CERF && { cerf: metadata.CERF }),
-										...(metadata.vertimas && { translation: metadata.vertimas }),
-										...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
-										...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }), 
-										...(metadata['uttryck'] && { uttryck: metadata['uttryck'] })
-									});
 								}
 							}
-						}
+						}	
+						
+						const sortedPhrases = foundPhrases.sort((a, b) => a.start - b.start);
+						console.log('Worker rado frazių:', sortedPhrases.length);
+						return sortedPhrases;
 					}
-					
-					const sortedPhrases = foundPhrases.sort((a, b) => a.start - b.start);
-					console.log('Worker rado frazių:', sortedPhrases.length);
-					return sortedPhrases;
-				}
 
 				self.onmessage = function(e) {
 					const { text, phrases } = e.data;
