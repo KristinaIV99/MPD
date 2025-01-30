@@ -9,8 +9,15 @@ export class UnknownWordsExporter {
         try {
             const response = await fetch('./words.json');
             const wordsData = await response.json();
-            this.knownWords = new Set(wordsData.words.map(word => word.text.toLowerCase()));
-            console.log(`${this.APP_NAME} Žodynas užkrautas, ${this.knownWords.size} žodžių`);
+            
+            // Surenkame visus bazinius žodžius iš words.json
+            Object.values(wordsData).forEach(wordInfo => {
+                if (wordInfo.base_word) {
+                    this.knownWords.add(wordInfo.base_word.toLowerCase());
+                }
+            });
+            
+            console.log(`${this.APP_NAME} Žodynas užkrautas, ${this.knownWords.size} bazinių žodžių`);
         } catch (error) {
             console.error(`${this.APP_NAME} Klaida kraunant žodyną:`, error);
         }
