@@ -16,15 +16,9 @@ class App {
           console.error(`${this.APP_NAME} Klaida inicializuojant PhraseReader:`, error);
       });
       
-      // Inicializuojame WordReader ir nustatome žinomus žodžius į WordCounter
-		this.wordReader.initialize()
-			.then(() => {
-				this.counter.setKnownWords(this.wordReader);
-				console.log(`${this.APP_NAME} Žinomi žodžiai nustatyti`);
-			})
-			.catch(error => {
-				console.error(`${this.APP_NAME} Klaida inicializuojant WordReader:`, error);
-			});
+      // Inicializuojame WordReader
+		this.wordReader.initialize())
+			.catch(error => console.error(`${this.APP_NAME} Klaida inicializuojant WordReader:`, error));
 
 		console.log(`${this.APP_NAME} Konstruktorius inicializuotas`);
 		this.initUI();
@@ -106,43 +100,20 @@ class App {
       // Išvalome seną turinį
       this.wordCount.textContent = '';
       
-      // Sukuriame ir pridedame žodžių skaičiaus elementą
-      const totalWords = document.createElement('div');
-      totalWords.textContent = `Žodžių skaičius: ${count.totalWords}`;
-      this.wordCount.appendChild(totalWords);
-      
-      // Sukuriame ir pridedame unikalių žodžių elementą
-      const uniqueWords = document.createElement('div');
-      uniqueWords.textContent = `Unikalių žodžių: ${stats.uniqueWords}`;
-      this.wordCount.appendChild(uniqueWords);
+      const elements = [
+        { text: `Žodžių skaičius: ${count.totalWords}` },
+        { text: `Unikalių žodžių: ${stats.uniqueWords}` },
+        { text: `Nežinomų žodžių: ${stats.unknownWords || 0}` }
+      ];
 
-      // Pridedame žinomų/nežinomų žodžių statistiką
-      const knownWords = document.createElement('div');
-      knownWords.textContent = `Žinomų žodžių: ${stats.knownWords || 0}`;
-      this.wordCount.appendChild(knownWords);
-
-      const unknownWords = document.createElement('div');
-      unknownWords.textContent = `Nežinomų žodžių: ${stats.unknownWords || 0}`;
-      this.wordCount.appendChild(unknownWords);
-
-      // Jei yra nežinomų žodžių detalės, pridedame top 10 dažniausių nežinomų žodžių
-      if (stats.unknownWordsDetails && stats.unknownWordsDetails.length > 0) {
-          const unknownWordsTitle = document.createElement('div');
-          unknownWordsTitle.textContent = 'Dažniausi nežinomi žodžiai:';
-          this.wordCount.appendChild(unknownWordsTitle);
-
-          const unknownWordsList = stats.unknownWordsDetails
-              .slice(0, 10)
-              .map(item => `${item.word} (${item.frequency})`);
-          
-          const unknownWordsDetail = document.createElement('div');
-          unknownWordsDetail.className = 'unknown-words-detail';
-          unknownWordsDetail.textContent = unknownWordsList.join(', ');
-          this.wordCount.appendChild(unknownWordsDetail);
-      }
-      
+      elements.forEach(element => {
+        const div = document.createElement('div');
+        div.textContent = element.text;
+        this.wordCount.appendChild(div);
+      });
+    
       console.log(`${this.APP_NAME} Atnaujinta žodžių statistika`);
-  }
+    }
 
   setContent(text, phrases = [], words = []) {  
     const div = document.createElement('div');
