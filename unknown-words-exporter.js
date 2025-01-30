@@ -1,3 +1,4 @@
+class UnknownWordsExporter {
     constructor() {
         this.APP_NAME = '[UnknownWordsExporter]';
         this.unknownWords = new Map();
@@ -26,7 +27,6 @@
     }
 
     cleanWord(word) {
-        // Pašaliname skaičius ir specialius simbolius iš žodžio
         return word.replace(/[0-9•\-()]/g, '')
                   .replace(/[^a-zA-ZåäöÅÄÖ]/g, '')
                   .toLowerCase();
@@ -34,42 +34,33 @@
 
     cleanSentence(sentence) {
         return sentence
-            .replace(/^["']|["']$/g, '')         // Pašaliname kabutes pradžioje ir pabaigoje
-            .replace(/[#*_\[\]•]/g, '')          // Pašaliname Markdown ir kitus spec. simbolius
-            .replace(/\s+/g, ' ')                // Sutvarkome tarpus
+            .replace(/^["']|["']$/g, '')
+            .replace(/[#*_\[\]•]/g, '')
+            .replace(/\s+/g, ' ')
             .trim();
     }
 
     isSuitableSentence(sentence) {
-        // Patikriname ar sakinys tinkamas
-        if (sentence.length < 10) return false;                    // Per trumpas
-        if (sentence.split(' ').length < 4) return false;          // Per mažai žodžių
-        if (sentence.includes('ISBN')) return false;               // Bibliografinis aprašas
-        if (sentence.includes('förlag')) return false;             // Leidyklos informacija
-        if (/^(TACK|Tack)/.test(sentence)) return false;          // Padėkos
-        if (/\([0-9]{4}\)/.test(sentence)) return false;          // Datos skliausteliuose
-        if (sentence.split('•').length > 2) return false;          // Sąrašai su bullets
-        if (/^[A-ZÅÄÖ\s]{10,}$/.test(sentence)) return false;     // Antraštės didžiosiomis
+        if (sentence.length < 10) return false;
+        if (sentence.split(' ').length < 4) return false;
+        if (sentence.includes('ISBN')) return false;
+        if (sentence.includes('förlag')) return false;
+        if (/^(TACK|Tack)/.test(sentence)) return false;
+        if (/\([0-9]{4}\)/.test(sentence)) return false;
+        if (sentence.split('•').length > 2) return false;
+        if (/^[A-ZÅÄÖ\s]{10,}$/.test(sentence)) return false;
         return true;
     }
 
     rateQualitySentence(sentence) {
         let score = 0;
         
-        // Prioritetas sakiniams, kurie baigiasi .!?
         if (/[.!?]$/.test(sentence)) score += 3;
-        
-        // Tikriname ar sakinys prasideda didžiąja raide
         if (/^[A-ZÄÅÖ]/.test(sentence)) score += 2;
         
-        // Tikriname ar sakinio ilgis yra optimalus (4-15 žodžių)
         const wordCount = sentence.split(' ').length;
         if (wordCount >= 4 && wordCount <= 15) score += 2;
-        
-        // Papildomi taškai už trumpesnius sakinius
         if (wordCount >= 4 && wordCount <= 10) score += 1;
-
-        // Minusas už per daug specialių simbolių
         if ((sentence.match(/[(),:;]/g) || []).length > 2) score -= 1;
         
         return score;
@@ -78,20 +69,16 @@
     processText(text) {
         console.log(`${this.APP_NAME} Pradedu teksto apdorojimą`);
         
-        // Išskaidome tekstą į sakinius, išsaugant originalius skyrybos ženklus
         const matches = text.match(/[^.!?]+[.!?]*/g) || [];
         const sentences = matches.map(s => s.trim()).filter(Boolean);
         
         console.log(`${this.APP_NAME} Rasti ${sentences.length} sakiniai`);
         
         sentences.forEach(sentence => {
-            if (!this.isSuitableSentence(sentence)) {
-                return; // Praleidžiame netinkamus sakinius
-            }
+            if (!this.isSuitableSentence(sentence)) return;
 
             const cleanedSentence = this.cleanSentence(sentence);
             
-            // Žodžių apdorojimas
             const words = cleanedSentence
                 .toLowerCase()
                 .split(/\s+/);
@@ -114,26 +101,23 @@
         console.log(`${this.APP_NAME} Pradedu eksportavimą`);
         let content = '';
         
-        for (let [word, sentencesSet] of this.unknownWords) {
+        for (const [word, sentencesSet] of this.unknownWords) {
             console.log(`${this.APP_NAME} Apdoroju žodį: ${word}`);
             
-            let processedSentences = Array.from(sentencesSet)
+            const processedSentences = Array.from(sentencesSet)
                 .filter(sentence => this.isSuitableSentence(sentence));
 
             if (processedSentences.length > 0) {
-                // Rūšiuojame sakinius pagal kokybę
                 const bestSentence = processedSentences
                     .sort((a, b) => this.rateQualitySentence(b) - this.rateQualitySentence(a))[0];
                 
-                if (bestSentence) {
-                    content += `${word}\t${bestSentence}\n`;
-                }
+                content += `${word}\t${bestSentence}\n`;
             } else {
                 console.log(`${this.APP_NAME} Žodžiui "${word}" nerasta tinkamų sakinių`);
             }
         }
 
-        if (content === '') {
+        if (!content) {
             console.log(`${this.APP_NAME} KLAIDA: Nėra turinio eksportavimui`);
             return;
         }
