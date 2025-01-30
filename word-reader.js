@@ -1,3 +1,4 @@
+
 import { TextNormalizer } from './text-normalizer.js';
 
 export class WordReader {
@@ -5,7 +6,6 @@ export class WordReader {
         this.READER_NAME = '[WordReader]';
         this.words = null;
         this.wordsMap = new Map();
-        this.homonymsMap = new Map(); // Naujas Map objektas homonimams
         this.normalizer = new TextNormalizer();
         this.debug = options.debug || false;
     }
@@ -30,7 +30,7 @@ export class WordReader {
                     const sample = Object.entries(this.words).slice(0, 5);
                     console.log(`${this.READER_NAME} Pavyzdiniai žodžiai:`, 
                         sample.map(([key, value]) => ({
-                            zodis: key.split('_')[0],
+                            zodis: key.split('_')[0], // Parodome žodį be sufikso
                             tipas: key.split('_')[1],
                             arTuriSkandinav: this.hasScandinavianLetters(key)
                         }))
@@ -56,9 +56,8 @@ export class WordReader {
 
     createScandinavianRegex(word) {
         const regexPattern = word.toLowerCase();
-        if (this.debug) {
-            console.log(`${this.READER_NAME} Sukurtas regex šablonas žodžiui "${word}":`, regexPattern);
-        }
+        console.log(`${this.READER_NAME} Sukurtas regex šablonas žodžiui "${word}":`, regexPattern);
+        
         return {
             originali: word,
             regex: regexPattern
@@ -93,38 +92,14 @@ export class WordReader {
                 hasScandinavian: hasScand
             };
             
-            // Homonymų apdorojimas
-            if (this.homonymsMap.has(wordWithoutSuffix)) {
-                // Jei žodis jau egzistuoja, pridedame naują reikšmę
-                const existingHomonyms = this.homonymsMap.get(wordWithoutSuffix);
-                existingHomonyms.push(wordData);
-                this.homonymsMap.set(wordWithoutSuffix, existingHomonyms);
-            } else {
-                // Jei žodis naujas, sukuriame naują įrašą
-                this.homonymsMap.set(wordWithoutSuffix, [wordData]);
-            }
-            
             if (hasScand) {
                 wordData.scanRegex = this.createScandinavianRegex(wordWithoutSuffix);
                 if (this.debug) {
                     console.log(`${this.READER_NAME} Ieškomas skandinaviškas žodis:`, wordData.scanRegex);
                 }
             }
-        }
-
-        // Debug informacija apie homonymus
-        if (this.debug) {
-            for (const [word, homonyms] of this.homonymsMap) {
-                if (homonyms.length > 1) {
-                    console.log(`${this.READER_NAME} Rasti homonymai žodžiui "${word}":`, 
-                        homonyms.map(h => ({
-                            type: h.type,
-                            translation: h.vertimas,
-                            baseForm: h['bazinė forma']
-                        }))
-                    );
-                }
-            }
+            
+            this.wordsMap.set(wordWithoutSuffix, wordData);
         }
         
         console.timeEnd('preprocess');
@@ -185,16 +160,18 @@ export class WordReader {
         
         const hasScandLetters = this.hasScandinavianLetters(text);
         console.log(`${this.READER_NAME} Ar tekste yra skandinaviškų raidžių:`, hasScandLetters);
+        
+        if (hasScandLetters) {
+            const scandLetters = text.match(/[åäöÅÄÖ]/g);
+            console.log(`${this.READER_NAME} Skandinaviškos raidės tekste:`, scandLetters);
+        }
 
         // Ieškome žodžių kiekvienoje teksto dalyje
         for (const part of textParts) {
             const searchText = part.text.toLowerCase();
             
-            // Naudojame homonymsMap vietoj wordsMap
-            for (const [word, homonyms] of this.homonymsMap) {
-                const hasScand = homonyms[0].hasScandinavian; // Tikriname pagal pirmą homonymą
-                
-                if (hasScand) {
+            for (const [word, metadata] of this.wordsMap) {
+                if (metadata.hasScandinavian) {
                     try {
                         let position = -1;
                         
@@ -205,21 +182,16 @@ export class WordReader {
                                 searchText[position + word.length] : ' ';
                                 
                             if (this.isWordBoundary(beforeChar) && this.isWordBoundary(afterChar)) {
-                                // Pridedame visus homonymus
-                                homonyms.forEach(metadata => {
-                                    foundWords.push({
-                                        text: word,
-                                        originalWord: metadata.originalWord,
-                                        start: globalPosition,
-                                        end: globalPosition + word.length,
-                                        type: metadata.type,
-                                        ...(metadata.CERF && { cerf: metadata.CERF }),
-                                        ...(metadata.vertimas && { translation: metadata.vertimas }),
-                                        ...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
-                                        ...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }),
-                                        isHomonym: homonyms.length > 1,
-                                        homonymsCount: homonyms.length
-                                    });
+                                foundWords.push({
+                                    text: word,
+                                    originalWord: metadata.originalWord,
+                                    start: globalPosition,
+                                    end: globalPosition + word.length,
+                                    type: metadata.type,
+                                    ...(metadata.CERF && { cerf: metadata.CERF }),
+                                    ...(metadata.vertimas && { translation: metadata.vertimas }),
+                                    ...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
+                                    ...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }),
                                 });
                             }
                         }
@@ -236,21 +208,16 @@ export class WordReader {
                             searchText[position + word.length] : ' ';
                             
                         if (this.isWordBoundary(beforeChar) && this.isWordBoundary(afterChar)) {
-                            // Pridedame visus homonymus
-                            homonyms.forEach(metadata => {
-                                foundWords.push({
-                                    text: word,
-                                    originalWord: metadata.originalWord,
-                                    start: globalPosition,
-                                    end: globalPosition + word.length,
-                                    type: metadata.type,
-                                    ...(metadata.CERF && { cerf: metadata.CERF }),
-                                    ...(metadata.vertimas && { translation: metadata.vertimas }),
-                                    ...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
-                                    ...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }),
-                                    isHomonym: homonyms.length > 1,
-                                    homonymsCount: homonyms.length
-                                });
+                            foundWords.push({
+                                text: word,
+                                originalWord: metadata.originalWord,
+                                start: globalPosition,
+                                end: globalPosition + word.length,
+                                type: metadata.type,
+                                ...(metadata.CERF && { cerf: metadata.CERF }),
+                                ...(metadata.vertimas && { translation: metadata.vertimas }),
+                                ...(metadata['bazinė forma'] && { baseForm: metadata['bazinė forma'] }),
+                                ...(metadata['bazė vertimas'] && { baseTranslation: metadata['bazė vertimas'] }),
                             });
                         }
                     }
@@ -258,29 +225,12 @@ export class WordReader {
             }
         }
 
-        // Grupuojame žodžius pagal poziciją
-        const groupedWords = {};
-        foundWords.forEach(word => {
-            const key = `${word.start}_${word.end}`;
-            if (!groupedWords[key]) {
-                groupedWords[key] = [];
-            }
-            groupedWords[key].push(word);
-        });
-
-        // Konvertuojame į galutinį masyvą, išlaikant pozicijų tvarką
-        const finalWords = Object.entries(groupedWords)
-            .sort(([keyA], [keyB]) => {
-                const [startA] = keyA.split('_').map(Number);
-                const [startB] = keyB.split('_').map(Number);
-                return startA - startB;
-            })
-            .flatMap(([_, words]) => words);
-
+        foundWords.sort((a, b) => a.start - b.start);
         console.timeEnd('wordSearch');
-        console.log(`${this.READER_NAME} Rasta žodžių:`, finalWords.length);
         
-        return finalWords;
+        console.log(`${this.READER_NAME} Rasta žodžių:`, foundWords.length);
+        
+        return foundWords;
     }
 
     isWordBoundary(char) {
