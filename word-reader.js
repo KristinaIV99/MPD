@@ -285,4 +285,3 @@ export class WordReader {
         return finalWords;
     }
 }
-}
