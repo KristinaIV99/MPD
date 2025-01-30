@@ -114,3 +114,14 @@
         padding: 10px;
     }
 }
+p {
+    margin-bottom: 1em;
+}
+
+.dialog-line {
+    margin: 1em 0;
+}
+
+br + br {
+    margin-top: 1em;
+}
