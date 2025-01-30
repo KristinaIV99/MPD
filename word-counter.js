@@ -83,26 +83,15 @@ export class WordCounter {
       const sortedWords = Object.entries(wordFrequency)
         .sort(([, a], [, b]) => b - a);
 
-      // Sudarome nežinomų žodžių statistiką
-      const unknownWordsArray = Array.from(unknownWords);
-      const unknownWordsWithFrequency = unknownWordsArray.map(word => ({
-        word,
-        frequency: wordFrequency[word]
-      })).sort((a, b) => b.frequency - a.frequency);
-
       console.log(`\n${this.COUNTER_NAME} STATISTIKA:`);
       console.log(`Iš viso žodžių: ${words.length}`);
       console.log(`Unikalių žodžių: ${sortedWords.length}`);
       console.log(`Nežinomų žodžių: ${unknownWords.size}`);
-      console.log(`Žinomų žodžių: ${this.knownWords.size}`);
       
       return {
         totalWords: words.length,
         uniqueWords: sortedWords.length,
-        knownWords: this.knownWords.size,
-        unknownWords: unknownWords.size,
-        unknownWordsDetails: unknownWordsWithFrequency,
-        mostCommon: sortedWords
+        unknownWords: unknownWords.size
       };
     } catch (error) {
       console.error(`${this.COUNTER_NAME} Klaida ruošiant statistiką:`, error);
