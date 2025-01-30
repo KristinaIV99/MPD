@@ -72,7 +72,8 @@
 
 .interactive-word {
     cursor: pointer;
-    border-bottom: 1px dashed #999;
+    border-bottom: 1px dashed #666;
+    position: relative;
 }
 
 .interactive-word:hover {
@@ -83,8 +84,14 @@
     position: absolute;
     background: white;
     border: 1px solid #ccc;
-    padding: 8px;
+    padding: 8px 12px;
     border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     z-index: 1000;
+    font-size: 14px;
+}
+
+.text-content {
+    line-height: 1.6;
+    padding: 20px;
 }
