@@ -5,15 +5,36 @@ export class HtmlConverter {
     constructor() {
         this.APP_NAME = '[HtmlConverter]';
         
-        // Nustatome marked konfigūraciją
+        // Suderinamos marked opcijos su TextNormalizer
         marked.setOptions({
-            breaks: true,           // Automatinis eilučių laužymas
-            gfm: true,             // GitHub Flavored Markdown palaikymas
-            headerIds: true,        // Automatiniai ID antraštėms
-            mangle: false,          // Išjungiame teksto kodavimą
-            sanitize: false,        // Išjungiame, nes naudosime DOMPurify
-            smartLists: true,       // Išmanūs sąrašai
+            breaks: true,
+            gfm: true,
+            headerIds: true,
+            mangle: false,
+            sanitize: false,
+            smartLists: true,
+            // Pridedame papildomas opcijas pagal TextNormalizer patterns
+            smartypants: true,  // Specialiems simboliams
+            pedantic: false,    // Laisvesniam Markdown
         });
+        
+        // Leidžiami HTML elementai pagal TextNormalizer pattern'us
+        this.ALLOWED_TAGS = [
+            // Headers iš handleHeaders()
+            'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+            // Emphasis ir Strong iš handleEmphasis()
+            'em', 'strong',
+            // Basic elements
+            'p', 'br', 'hr',
+            // Lists iš processBasicElements()
+            'ul', 'ol', 'li',
+            // Blockquotes iš normalizeQuotes()
+            'blockquote',
+            // Code blocks iš normalizeCodeBlocks()
+            'code', 'pre',
+            // Baziniai elementai
+            'div', 'span'
+        ];
         
         console.log(`${this.APP_NAME} Konstruktorius inicializuotas`);
     }
@@ -22,20 +43,17 @@ export class HtmlConverter {
         try {
             console.log(`${this.APP_NAME} Pradedama konversija į HTML`);
 
-            // Konvertuojame Markdown į HTML
+            // Konvertuojame į HTML
             let html = marked(text);
-            console.log(`${this.APP_NAME} Markdown konvertuotas į HTML`);
-
-            // Išvalome HTML
+            
+            // Išvalome HTML pagal leistinus elementus
             html = DOMPurify.sanitize(html, {
-                ALLOWED_TAGS: [
-                    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-                    'p', 'br', 'b', 'i', 'strong', 'em',
-                    'ul', 'ol', 'li', 'a', 'blockquote',
-                    'code', 'pre', 'hr'
-                ]
+                ALLOWED_TAGS: this.ALLOWED_TAGS,
+                KEEP_CONTENT: true,
+                ALLOW_DATA_ATTR: false
             });
 
+            console.log(`${this.APP_NAME} HTML konversija baigta`);
             return html;
 
         } catch (error) {
