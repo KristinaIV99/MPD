@@ -3,42 +3,74 @@ import DOMPurify from './vendor/purify.es.mjs';
 
 export class HtmlConverter {
     constructor(wordReader, phraseReader) {
+        this.APP_NAME = '[HtmlConverter]';
         this.wordReader = wordReader;
         this.phraseReader = phraseReader;
         
-        // Konfigūruojame marked
         marked.setOptions({
             breaks: true,
             gfm: true,
             sanitize: false
         });
+        
+        console.log(`${this.APP_NAME} Konstruktorius inicializuotas`);
     }
 
-    async convertToInteractiveHtml(normalizedText) {
-        // 1. Konvertuojame į pradinį HTML
-        let html = marked(normalizedText);
+    async convertToHtml(text, words, phrases) {
+        console.log(`${this.APP_NAME} Pradedama konversija į HTML`);
         
-        // 2. Išvalome HTML
+        // Konvertuojame į pradinį HTML
+        let html = marked(text);
+        console.log(`${this.APP_NAME} Markdown konvertuotas į HTML`);
+        
+        // Išvalome HTML
         html = DOMPurify.sanitize(html);
         
-        // 3. Pridedame interaktyvius elementus žodžiams
-        html = await this.addWordInteractivity(html);
+        // Pridedame interaktyvius elementus
+        const processedHtml = await this.processInteractiveElements(html, words, phrases);
         
-        return html;
+        return processedHtml;
     }
 
-    async addWordInteractivity(html) {
+    async processInteractiveElements(html, words, phrases) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
         
-        // Einame per teksto nodes ir pridedame interaktyvumą
-        const textNodes = this.findTextNodes(doc.body);
+        // Apdorojame žodžius ir frazes
+        for (const word of words) {
+            await this.markWord(doc, word);
+        }
         
-        for (const node of textNodes) {
-            await this.processTextNode(node);
+        for (const phrase of phrases) {
+            await this.markPhrase(doc, phrase);
         }
         
         return doc.body.innerHTML;
+    }
+
+    async markWord(doc, word) {
+        const range = document.createRange();
+        const textNodes = this.findTextNodes(doc.body);
+        
+        for (const node of textNodes) {
+            const index = node.textContent.indexOf(word.text);
+            if (index !== -1) {
+                range.setStart(node, index);
+                range.setEnd(node, index + word.text.length);
+                
+                const span = doc.createElement('span');
+                span.className = 'interactive-word';
+                span.dataset.type = word.type;
+                span.dataset.wordId = word.id;
+                
+                range.surroundContents(span);
+            }
+        }
+    }
+
+    async markPhrase(doc, phrase) {
+        // Panašiai kaip markWord, bet frazėms
+        // ...
     }
 
     findTextNodes(element) {
@@ -55,27 +87,5 @@ export class HtmlConverter {
             textNodes.push(node);
         }
         return textNodes;
-    }
-
-    async processTextNode(node) {
-        const words = node.textContent.split(/\s+/);
-        const fragment = document.createDocumentFragment();
-        
-        for (const word of words) {
-            const wordInfo = await this.wordReader.getWordInfo(word);
-            if (wordInfo) {
-                const span = document.createElement('span');
-                span.textContent = word;
-                span.className = 'interactive-word';
-                span.dataset.translation = wordInfo.translation;
-                span.dataset.wordId = wordInfo.id;
-                fragment.appendChild(span);
-            } else {
-                fragment.appendChild(document.createTextNode(word));
-            }
-            fragment.appendChild(document.createTextNode(' '));
-        }
-        
-        node.parentNode.replaceChild(fragment, node);
     }
 }
