@@ -150,7 +150,7 @@ class App {
         console.log(`${this.APP_NAME} Pradedama HTML konversija`);
         
         // Konvertuojame į HTML naudodami HtmlConverter
-        const htmlContent = await this.htmlConverter.convertToHtml(text, words, phrases);
+        const htmlContent = await this.htmlConverter.convertToHtml(text);
         
         const div = document.createElement('div');
         div.className = 'text-content';
