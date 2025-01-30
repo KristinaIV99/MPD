@@ -1,4 +1,4 @@
-export class UnknownWordsExporter {
+dar reikėtų pridėti tokį dalyką, kad jei neatitinka jokių sąlygų, nerandamas sakinys pagal tas sąlygas kurios užduotos, bet jos turi pirmumą, tada įdedama tai kas randama su tuo žodžiuexport class UnknownWordsExporter {
     constructor() {
         this.APP_NAME = '[UnknownWordsExporter]';
         this.unknownWords = new Map();
@@ -127,7 +127,7 @@ export class UnknownWordsExporter {
                     .sort((a, b) => this.rateQualitySentence(b) - this.rateQualitySentence(a))[0];
                 
                 if (bestSentence) {
-                    content += `${word} | ${bestSentence}\n`;
+                    content += `${word}\t${bestSentence}\n`;
                 }
             } else {
                 console.log(`${this.APP_NAME} Žodžiui "${word}" nerasta tinkamų sakinių`);
