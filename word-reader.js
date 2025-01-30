@@ -6,6 +6,7 @@ export class WordReader {
         this.READER_NAME = '[WordReader]';
         this.words = null;
         this.wordsMap = new Map();
+        this.homonymsMap = new Map();
         this.normalizer = new TextNormalizer();
         this.debug = options.debug || false;
     }
@@ -38,7 +39,18 @@ export class WordReader {
                 }
 
                 this.preprocessWords();
-                console.log(`${this.READER_NAME} Sėkmingai užkrauti ${Object.keys(this.words).length} žodžiai`);
+                
+                // Pridedame išsamesnę informaciją apie užkrautus žodžius
+                console.log(`${this.READER_NAME} Žodynas sėkmingai užkrautas:`);
+                console.log(`${this.READER_NAME} - Iš viso žodžių žodyne: ${Object.keys(this.words).length}`);
+                console.log(`${this.READER_NAME} - Unikalių žodžių (wordsMap): ${this.wordsMap.size}`);
+                console.log(`${this.READER_NAME} - Žodžių su homonimais (homonymsMap): ${this.homonymsMap.size}`);
+                
+                // Parodome homonimų statistiką
+                const homonimaiCount = Array.from(this.homonymsMap.values())
+                    .filter(homonyms => homonyms.length > 1).length;
+                console.log(`${this.READER_NAME} - Rasta žodžių su homonimais: ${homonimaiCount}`);
+
                 console.timeEnd('wordLoad');
             } catch (jsonError) {
                 console.error(`${this.READER_NAME} Klaida apdorojant JSON:`, jsonError);
