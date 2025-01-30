@@ -1,4 +1,3 @@
-dar reikėtų pridėti tokį dalyką, kad jei neatitinka jokių sąlygų, nerandamas sakinys pagal tas sąlygas kurios užduotos, bet jos turi pirmumą, tada įdedama tai kas randama su tuo žodžiuexport class UnknownWordsExporter {
     constructor() {
         this.APP_NAME = '[UnknownWordsExporter]';
         this.unknownWords = new Map();
