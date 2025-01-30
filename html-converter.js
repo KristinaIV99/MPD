@@ -35,32 +35,29 @@ export class HtmlConverter {
         try {
             console.log(`${this.APP_NAME} Pradedama konversija į HTML`);
 
-            let processed = text;
+            // Pirmiausia pakeičiame dialogų brūkšnius į saugų HTML kodą
+            let processed = text.replace(/–/g, '&ndash;');
             
-            // Pakeičiame §SECTION_BREAK§ į trigubą naują eilutę
-            processed = processed.replace(/§SECTION_BREAK§/g, '\n\n\n');
+            // Pakeičiame sekcijų skirtukus į HTML paragrafus su tarpais
+            processed = processed.replace(/§SECTION_BREAK§/g, '</p><p><br><br></p><p>');
             
-            // Išsaugome dialogų brūkšnius
-            processed = processed.replace(/–/g, '---DASH---');
-            
-            // Horizontalus brūkšnys
+            // Horizontalią liniją keičiame į HR
             processed = processed.replace(/^—$/gm, '<hr>');
 
             // Konvertuojame į HTML
             let html = marked(processed);
             
-            // Grąžiname dialogų brūkšnius
-            html = html.replace(/---DASH---/g, '–');
-            
             // Išvalome HTML
             html = DOMPurify.sanitize(html, {
                 ALLOWED_TAGS: this.ALLOWED_TAGS,
                 KEEP_CONTENT: true,
-                ALLOW_DATA_ATTR: false
+                ALLOW_DATA_ATTR: false,
+                ADD_ATTR: ['style'] // Leidžiame style atributą
             });
 
-            // Pridedame papildomą tarpą tarp paragrafų
-            html = html.replace(/\n\n\n/g, '<br><br>');
+            // Apsaugome, kad neprarastume tarpų
+            html = html.replace(/<p><br>/g, '<p style="margin-bottom: 2em;">');
+            html = html.replace(/<br><br>/g, '<br style="margin-bottom: 1em;"><br style="margin-bottom: 1em;">');
 
             console.log(`${this.APP_NAME} HTML konversija baigta`);
             return html;
