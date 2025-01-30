@@ -14,9 +14,12 @@
 </head>
 <body>
     <div id="app">
+        <div class="controls">
         <input type="file" accept=".md" id="fileInput">
-        <div id="content"></div>
+        <button id="exportUnknownWords" disabled>Eksportuoti nežinomus žodžius</button>
     </div>
+    <div id="content"></div>
+  </div>
     
     <script type="module" src="./text-reader.js"></script>
     <script type="module" src="./text-normalizer.js"></script>
