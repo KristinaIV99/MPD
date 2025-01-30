@@ -16,9 +16,15 @@ class App {
           console.error(`${this.APP_NAME} Klaida inicializuojant PhraseReader:`, error);
       });
       
-      // Inicializuojame WordReader
-		this.wordReader.initialize()
-			.catch(error => console.error(`${this.APP_NAME} Klaida inicializuojant WordReader:`, error));
+      // Inicializuojame WordReader ir nustatome žinomus žodžius į WordCounter
+	  this.wordReader.initialize()
+        .then(() => {
+          this.counter.setKnownWords(this.wordReader);
+          console.log(`${this.APP_NAME} Žinomi žodžiai nustatyti:`, this.counter.knownWords.size);
+        })
+        .catch(error => {
+          console.error(`${this.APP_NAME} Klaida inicializuojant WordReader:`, error);
+        });
 
 		console.log(`${this.APP_NAME} Konstruktorius inicializuotas`);
 		this.initUI();
