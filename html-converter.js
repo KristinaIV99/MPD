@@ -13,7 +13,7 @@ export class HtmlConverter {
             mangle: false,
             sanitize: false,
             smartLists: true,
-            smartypants: false,
+            smartypants: false, // Išjungiame, kad nekonvertuotų brūkšnių
             pedantic: false
         });
         
@@ -35,11 +35,22 @@ export class HtmlConverter {
         try {
             console.log(`${this.APP_NAME} Pradedama konversija į HTML`);
 
+            let processed = text;
+            
+            // Pakeičiame §SECTION_BREAK§ į trigubą naują eilutę
+            processed = processed.replace(/§SECTION_BREAK§/g, '\n\n\n');
+            
+            // Išsaugome dialogų brūkšnius
+            processed = processed.replace(/–/g, '---DASH---');
+            
             // Horizontalus brūkšnys
-            let processed = text.replace(/^—$/gm, '<hr>');
+            processed = processed.replace(/^—$/gm, '<hr>');
 
             // Konvertuojame į HTML
             let html = marked(processed);
+            
+            // Grąžiname dialogų brūkšnius
+            html = html.replace(/---DASH---/g, '–');
             
             // Išvalome HTML
             html = DOMPurify.sanitize(html, {
