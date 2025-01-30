@@ -57,11 +57,6 @@ export class UnknownWordsExporter {
     rateQualitySentence(sentence) {
         let score = 0;
         
-        // Minusas už kabutes
-        if (sentence.includes('"') || sentence.includes('"') || sentence.includes('"')) {
-            score -= 5;
-        }
-        
         // Prioritetas sakiniams, kurie baigiasi .!?
         if (/[.!?]$/.test(sentence)) score += 3;
         
@@ -88,16 +83,9 @@ export class UnknownWordsExporter {
         const matches = text.match(/[^.!?]+[.!?]*/g) || [];
         const sentences = matches.map(s => s.trim()).filter(Boolean);
         
-        // Pridedame atskiras eilutes
-        const lines = text.split('\n')
-            .map(line => line.trim())
-            .filter(line => line.length > 0);
-            
-        const allSentences = [...sentences, ...lines];
+        console.log(`${this.APP_NAME} Rasti ${sentences.length} sakiniai`);
         
-        console.log(`${this.APP_NAME} Rasti ${allSentences.length} sakiniai`);
-        
-        allSentences.forEach(sentence => {
+        sentences.forEach(sentence => {
             if (!this.isSuitableSentence(sentence)) {
                 return; // Praleidžiame netinkamus sakinius
             }
@@ -115,7 +103,7 @@ export class UnknownWordsExporter {
                     if (!this.unknownWords.has(cleanedWord)) {
                         this.unknownWords.set(cleanedWord, new Set());
                     }
-                    this.unknownWords.get(cleanedWord).add(sentence);
+                    this.unknownWords.get(cleanedWord).add(cleanedSentence);
                 }
             });
         });
