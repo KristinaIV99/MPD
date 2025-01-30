@@ -1,4 +1,3 @@
-
 import { TextNormalizer } from './text-normalizer.js';
 
 export class WordReader {
@@ -6,7 +5,7 @@ export class WordReader {
         this.READER_NAME = '[WordReader]';
         this.words = null;
         this.wordsMap = new Map();
-        this.homonymsMap = new Map();
+        this.homonymsMap = new Map(); // Naujas Map objektas homonimams
         this.normalizer = new TextNormalizer();
         this.debug = options.debug || false;
     }
@@ -31,7 +30,7 @@ export class WordReader {
                     const sample = Object.entries(this.words).slice(0, 5);
                     console.log(`${this.READER_NAME} Pavyzdiniai žodžiai:`, 
                         sample.map(([key, value]) => ({
-                            zodis: key.split('_')[0], // Parodome žodį be sufikso
+                            zodis: key.split('_')[0],
                             tipas: key.split('_')[1],
                             arTuriSkandinav: this.hasScandinavianLetters(key)
                         }))
@@ -57,8 +56,9 @@ export class WordReader {
 
     createScandinavianRegex(word) {
         const regexPattern = word.toLowerCase();
-        console.log(`${this.READER_NAME} Sukurtas regex šablonas žodžiui "${word}":`, regexPattern);
-        
+        if (this.debug) {
+            console.log(`${this.READER_NAME} Sukurtas regex šablonas žodžiui "${word}":`, regexPattern);
+        }
         return {
             originali: word,
             regex: regexPattern
@@ -110,8 +110,6 @@ export class WordReader {
                     console.log(`${this.READER_NAME} Ieškomas skandinaviškas žodis:`, wordData.scanRegex);
                 }
             }
-            
-            this.wordsMap.set(wordWithoutSuffix, wordData);
         }
 
         // Debug informacija apie homonymus
@@ -283,5 +281,20 @@ export class WordReader {
         console.log(`${this.READER_NAME} Rasta žodžių:`, finalWords.length);
         
         return finalWords;
+    }
+
+    isWordBoundary(char) {
+        return /[\s.,!?;:"'()[\]{}<>\\\/\-—]/.test(char);
+    }
+
+    processText(text, phrases = []) {
+        console.time('totalProcess');
+        const foundWords = this.findWords(text, phrases);
+        console.timeEnd('totalProcess');
+        
+        return {
+            originalText: text,
+            words: foundWords
+        };
     }
 }
