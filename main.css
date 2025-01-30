@@ -114,3 +114,23 @@
         padding: 10px;
     }
 }
+
+/* Pilno pločio horizontali linija */
+hr.full-width {
+    border: none;
+    border-top: 1px solid #000;
+    margin: 2em 0;
+    width: 100%;
+}
+
+/* Dialogo brūkšnys */
+.dialog-dash {
+    display: inline-block;
+    margin: 0 0.5em;
+    font-weight: normal;
+}
+
+/* Trijų eilučių tarpas */
+p:empty {
+    margin: 2em 0;
+}
