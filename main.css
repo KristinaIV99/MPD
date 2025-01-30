@@ -95,3 +95,22 @@
     line-height: 1.6;
     padding: 20px;
 }
+
+@media (max-width: 768px) {
+    .text-content {
+        font-size: 16px; /* Geresnis skaitomumas mobiliuose */
+        line-height: 1.5;
+        padding: 12px;
+    }
+
+    .interactive-word {
+        padding: 2px 0; /* Didesnis touch target */
+        margin: 0 1px;
+    }
+
+    .word-popup {
+        max-width: 90vw; /* Ribojame plotį mobiliuose */
+        font-size: 14px;
+        padding: 10px;
+    }
+}
