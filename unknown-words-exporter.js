@@ -41,7 +41,31 @@ export class UnknownWordsExporter {
             .trim();
     }
 
-    isSuitableSentence(sentence) {
+    isStandaloneFormat(line, allLines) {
+        const index = allLines.indexOf(line);
+        const hasPrevEmpty = index === 0 || !allLines[index - 1].trim();
+        const hasNextEmpty = index === allLines.length - 1 || !allLines[index + 1].trim();
+        const hasNoParaMarkers = !line.includes(',') && !line.includes(':') && !line.includes(';');
+        
+        const isTitleLike = (
+            /^[A-ZÅÄÖ\s\-*#]+$/.test(line) ||
+            line.includes('ISBN') ||
+            /^\*[^*]+\*$/.test(line) ||
+            /^#/.test(line) ||
+            /^\d+/.test(line)
+        );
+        
+        return (hasPrevEmpty && hasNextEmpty && hasNoParaMarkers) || isTitleLike;
+    }
+
+    isSuitableSentence(sentence, isStandalone = false) {
+        if (isStandalone) {
+            // Mažiau griežti reikalavimai atskiriems elementams
+            return sentence.length > 0 && 
+                   !sentence.includes('förlag') &&
+                   !/^(TACK|Tack)/.test(sentence);
+        }
+        
         // Patikriname ar sakinys tinkamas
         if (sentence.length < 10) return false;                    // Per trumpas
         if (sentence.split(' ').length < 4) return false;          // Per mažai žodžių
@@ -54,24 +78,26 @@ export class UnknownWordsExporter {
         return true;
     }
 
-    rateQualitySentence(sentence) {
+    rateQualitySentence(sentence, isStandalone = false) {
         let score = 0;
         
-        // Prioritetas sakiniams, kurie baigiasi .!?
-        if (/[.!?]$/.test(sentence)) score += 3;
-        
-        // Tikriname ar sakinys prasideda didžiąja raide
-        if (/^[A-ZÄÅÖ]/.test(sentence)) score += 2;
-        
-        // Tikriname ar sakinio ilgis yra optimalus (4-15 žodžių)
-        const wordCount = sentence.split(' ').length;
-        if (wordCount >= 4 && wordCount <= 15) score += 2;
-        
-        // Papildomi taškai už trumpesnius sakinius
-        if (wordCount >= 4 && wordCount <= 10) score += 1;
+        // Minusas už kabutes
+        if (sentence.includes('"') || sentence.includes('"') || sentence.includes('"')) {
+            score -= 5;
+        }
 
-        // Minusas už per daug specialių simbolių
-        if ((sentence.match(/[(),:;]/g) || []).length > 2) score -= 1;
+        if (!isStandalone) {
+            // Pilni sakiniai
+            if (/[.!?]$/.test(sentence)) score += 3;
+            if (/^[A-ZÄÅÖ]/.test(sentence)) score += 2;
+            const wordCount = sentence.split(' ').length;
+            if (wordCount >= 4 && wordCount <= 15) score += 2;
+            if (wordCount >= 4 && wordCount <= 10) score += 1;
+            if ((sentence.match(/[(),:;]/g) || []).length > 2) score -= 1;
+        } else {
+            // Atskiri elementai gauna bazinį žemesnį prioritetą
+            score -= 3;
+        }
         
         return score;
     }
@@ -83,19 +109,25 @@ export class UnknownWordsExporter {
         const matches = text.match(/[^.!?]+[.!?]*/g) || [];
         const sentences = matches.map(s => s.trim()).filter(Boolean);
         
-        console.log(`${this.APP_NAME} Rasti ${sentences.length} sakiniai`);
+        // Gauname visas eilutes ir atskirus elementus
+        const allLines = text.split('\n').map(line => line.trim());
+        const standaloneElements = allLines
+            .filter(line => line && this.isStandaloneFormat(line, allLines));
         
-        sentences.forEach(sentence => {
-            if (!this.isSuitableSentence(sentence)) {
-                return; // Praleidžiame netinkamus sakinius
+        const allSentences = [...sentences, ...standaloneElements];
+        
+        console.log(`${this.APP_NAME} Rasti ${allSentences.length} sakiniai`);
+        
+        allSentences.forEach(sentence => {
+            // Nustatome ar tai atskiras elementas
+            const isStandalone = standaloneElements.includes(sentence);
+            
+            if (!this.isSuitableSentence(sentence, isStandalone)) {
+                return;
             }
 
             const cleanedSentence = this.cleanSentence(sentence);
-            
-            // Žodžių apdorojimas
-            const words = cleanedSentence
-                .toLowerCase()
-                .split(/\s+/);
+            const words = cleanedSentence.toLowerCase().split(/\s+/);
             
             words.forEach(word => {
                 const cleanedWord = this.cleanWord(word);
@@ -103,7 +135,7 @@ export class UnknownWordsExporter {
                     if (!this.unknownWords.has(cleanedWord)) {
                         this.unknownWords.set(cleanedWord, new Set());
                     }
-                    this.unknownWords.get(cleanedWord).add(cleanedSentence);
+                    this.unknownWords.get(cleanedWord).add(sentence);
                 }
             });
         });
@@ -115,16 +147,25 @@ export class UnknownWordsExporter {
         console.log(`${this.APP_NAME} Pradedu eksportavimą`);
         let content = '';
         
+        // Gauname visas eilutes dar kartą standaloneElements patikrinimui
+        const allLines = text.split('\n').map(line => line.trim());
+        const standaloneElements = allLines
+            .filter(line => line && this.isStandaloneFormat(line, allLines));
+        
         for (let [word, sentencesSet] of this.unknownWords) {
             console.log(`${this.APP_NAME} Apdoroju žodį: ${word}`);
             
-            let processedSentences = Array.from(sentencesSet)
-                .filter(sentence => this.isSuitableSentence(sentence));
-
-            if (processedSentences.length > 0) {
+            let sentences = Array.from(sentencesSet);
+            
+            if (sentences.length > 0) {
                 // Rūšiuojame sakinius pagal kokybę
-                const bestSentence = processedSentences
-                    .sort((a, b) => this.rateQualitySentence(b) - this.rateQualitySentence(a))[0];
+                const bestSentence = sentences
+                    .sort((a, b) => {
+                        const isStandaloneA = standaloneElements.includes(a);
+                        const isStandaloneB = standaloneElements.includes(b);
+                        return this.rateQualitySentence(b, isStandaloneB) - 
+                               this.rateQualitySentence(a, isStandaloneA);
+                    })[0];
                 
                 if (bestSentence) {
                     content += `${word}\t${bestSentence}\n`;
