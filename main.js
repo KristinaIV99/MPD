@@ -3,6 +3,7 @@ import { WordCounter } from './word-counter.js';
 import { PhraseReader } from './phrase-reader.js';
 import { WordReader } from './word-reader.js';
 import { UnknownWordsExporter } from './unknown-words-exporter.js';
+import { HtmlConverter } from './html-converter.js';
 
 class App {
   constructor() {
@@ -12,6 +13,7 @@ class App {
       this.phraseReader = new PhraseReader();
       this.wordReader = new WordReader();
       this.unknownWordsExporter = new UnknownWordsExporter();
+      this.htmlConverter = new HtmlConverter(this.wordReader, this.phraseReader);
 
       // Inicializuojame PhraseReader
       this.phraseReader.initialize().catch(error => {
@@ -143,34 +145,46 @@ class App {
       console.log(`${this.APP_NAME} Atnaujinta žodžių statistika`);
     }
 
-  setContent(text, phrases = [], words = []) {  
-    const div = document.createElement('div');
-    div.className = 'text-content';
-    div.textContent = text;
-    
-    // Jei yra rastų frazių, išvedame jas į konsolę
-    if (phrases.length > 0) {
-        console.log(`${this.APP_NAME} Rastos frazės tekste:`, 
-            phrases.map(p => ({
-                text: p.text,
-                pozicija: `${p.start}-${p.end}`,
-                tipas: p.type
-            }))
-        );
+  async setContent(text, phrases = [], words = []) {  
+    try {
+        console.log(`${this.APP_NAME} Pradedama HTML konversija`);
+        
+        // Konvertuojame į HTML naudodami HtmlConverter
+        const htmlContent = await this.htmlConverter.convertToHtml(text, words, phrases);
+        
+        const div = document.createElement('div');
+        div.className = 'text-content';
+        // Vietoj textContent naudojame innerHTML
+        div.innerHTML = htmlContent;
+        
+        // Jei yra rastų frazių, išvedame jas į konsolę
+        if (phrases.length > 0) {
+            console.log(`${this.APP_NAME} Rastos frazės tekste:`, 
+                phrases.map(p => ({
+                    text: p.text,
+                    pozicija: `${p.start}-${p.end}`,
+                    tipas: p.type
+                }))
+            );
+        }
+        
+        // Jei yra rastų žodžių, išvedame juos į konsolę
+        if (words.length > 0) {
+            console.log(`${this.APP_NAME} Rasti žodžiai tekste:`, 
+                words.map(w => ({
+                    text: w.text,
+                    pozicija: `${w.start}-${w.end}`,
+                    tipas: w.type
+                }))
+            );
+        }
+        
+        this.content.replaceChildren(div);
+        console.log(`${this.APP_NAME} HTML konversija baigta`);
+    } catch (error) {
+        console.error(`${this.APP_NAME} Klaida konvertuojant į HTML:`, error);
+        this.handleError(error);
     }
-    
-    // Jei yra rastų žodžių, išvedame juos į konsolę
-    if (words.length > 0) {
-        console.log(`${this.APP_NAME} Rasti žodžiai tekste:`, 
-            words.map(w => ({
-                text: w.text,
-                pozicija: `${w.start}-${w.end}`,
-                tipas: w.type
-            }))
-        );
-    }
-    
-    this.content.replaceChildren(div);
   }
 
   handleError(error) {
