@@ -2,6 +2,7 @@ import { TextReader } from './text-reader.js';
 import { WordCounter } from './word-counter.js';
 import { PhraseReader } from './phrase-reader.js';
 import { WordReader } from './word-reader.js';
+import { UnknownWordsExporter } from './unknown-words-exporter.js';
 
 class App {
   constructor() {
@@ -10,6 +11,7 @@ class App {
       this.counter = new WordCounter();
       this.phraseReader = new PhraseReader();
       this.wordReader = new WordReader();
+      this.unknownWordsExporter = new UnknownWordsExporter();
 
       // Inicializuojame PhraseReader
       this.phraseReader.initialize().catch(error => {
@@ -26,6 +28,10 @@ class App {
           console.error(`${this.APP_NAME} Klaida inicializuojant WordReader:`, error);
         });
 
+      this.unknownWordsExporter.initialize().catch(error => {
+          console.error(`${this.APP_NAME} Klaida inicializuojant UnknownWordsExporter:`, error);
+      });
+
 		console.log(`${this.APP_NAME} Konstruktorius inicializuotas`);
 		this.initUI();
 		this.bindEvents();
@@ -34,6 +40,7 @@ class App {
 
   initUI() {
     this.fileInput = document.getElementById('fileInput');
+    this.exportButton = document.getElementById('exportUnknownWords');
     this.content = document.getElementById('content');
     this.wordCount = document.createElement('div');
     this.wordCount.className = 'word-count';
@@ -46,8 +53,20 @@ class App {
 
   bindEvents() {
     this.fileInput.addEventListener('change', (e) => this.handleFile(e));
+    this.exportButton.addEventListener('click', () => this.handleExport());
     this.reader.events.addEventListener('progress', (e) => this.updateProgress(e.detail));
     console.log(`${this.APP_NAME} Event listeners prijungti`);
+  }
+
+  async handleExport() {
+      const text = this.content.textContent;
+      if (!text) {
+        console.warn(`${this.APP_NAME} Nėra teksto eksportavimui`);
+        return;
+      }
+
+      this.unknownWordsExporter.processText(text);
+      this.unknownWordsExporter.exportToTxt();
   }
 
   async handleFile(e) {
@@ -59,6 +78,7 @@ class App {
       console.log(`${this.APP_NAME} Pradedamas naujo failo apdorojimas`);
       this.isProcessing = true;
       this.fileInput.disabled = true;
+      this.exportButton.disabled = true;
       this.showLoadingState();
       const file = e.target.files[0];
       if(!file) {
@@ -68,6 +88,8 @@ class App {
       console.log(`${this.APP_NAME} Apdorojamas failas: ${file.name}`);
       const text = await this.reader.readFile(file);
       console.log(`${this.APP_NAME} Failas sėkmingai nuskaitytas`);
+      
+      this.exportButton.disabled = false;
       
       // Skaičiuojame žodžius ir gauname statistiką
       console.log(`${this.APP_NAME} Pradedamas žodžių skaičiavimas`);
