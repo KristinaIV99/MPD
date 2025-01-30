@@ -69,3 +69,22 @@
   border: 1px solid #ff4444;
   margin: 10px 0;
 }
+
+.interactive-word {
+    cursor: pointer;
+    border-bottom: 1px dashed #999;
+}
+
+.interactive-word:hover {
+    background-color: #f0f0f0;
+}
+
+.word-popup {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    padding: 8px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 1000;
+}
