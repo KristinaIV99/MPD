@@ -76,6 +76,12 @@
     position: relative;
 }
 
+.interactive-word {
+    cursor: pointer;
+    border-bottom: 1px dashed #666;
+    position: relative;
+}
+
 .interactive-word:hover {
     background-color: #f0f0f0;
 }
