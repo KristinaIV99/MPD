@@ -188,7 +188,7 @@ export class HtmlConverter {
 							const originalWord = markedText.slice(index, index + word.text.length);
 							// Pakeičiame originalų tekstą su span
 							markedText = markedText.slice(0, index) + 
-									`${originalWord}` + 
+									`<span class="word">${originalWord}</span>` +
 									markedText.slice(index + word.text.length);
 							hasChanges = true;
 						}
