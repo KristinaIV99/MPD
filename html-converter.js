@@ -153,65 +153,47 @@ export class HtmlConverter {
 		}
 	}
 
-    markWords(html, words, limit = 100) {
+    markWords(html, words) {
 		try {
 			console.log(`${this.APP_NAME} Pradedamas žodžių žymėjimas`);
+			console.log('Gautas HTML:', html);
+			console.log('Gauti žodžiai:', words);
 			
-			// Sukuriame žodžių žemėlapį pagal pozicijas
-			const wordPositions = new Set(); // Saugosime jau pažymėtų žodžių pozicijas
-			const limitedWords = words.slice(0, limit);
-			
+			// Sukuriame laikiną DOM elementą
 			const tempDiv = document.createElement('div');
 			tempDiv.innerHTML = html;
+			console.log('Sukurtas laikinas DIV:', tempDiv.innerHTML);
 			
 			// Rūšiuojame žodžius nuo ilgiausio iki trumpiausio
-			const sortedWords = [...limitedWords].sort((a, b) => b.text.length - a.text.length);
+			const sortedWords = [...words].sort((a, b) => b.text.length - a.text.length);
+			console.log('Surūšiuoti žodžiai:', sortedWords);
 			
+			// Einame per tekstinius mazgus
 			const walkNodes = (node) => {
 				if (node.nodeType === Node.TEXT_NODE) {
 					let text = node.textContent;
+					console.log('Tikrinamas tekstas:', text);
+					// Tikriname ar tekstas turi žodžių
 					let hasChanges = false;
 					let markedText = text;
-					let offset = 0; // Sekame pozicijos pasikeitimus
-					
 					sortedWords.forEach(word => {
 						const textLower = markedText.toLowerCase();
 						const wordLower = word.text.toLowerCase();
 						
-						let index = textLower.indexOf(wordLower);
-						// Tikriname ar žodis dar nebuvo pažymėtas
-						while (index !== -1) {
-							const globalStart = offset + index;
-							const globalEnd = globalStart + word.text.length;
-							const positionKey = `${globalStart}-${globalEnd}`;
-							
-							if (!wordPositions.has(positionKey)) {
-								console.log(`Rastas žodis "${word.text}" pozicijoje ${index}`);
-								
-								const originalWord = markedText.slice(index, index + word.text.length);
-								const classes = word.isHomonym ? 'word homonym' : 'word';
-								const attributes = [
-									`class="${classes}"`,
-									`data-type="${word.type || ''}"`,
-									`data-translation="${word.translation || ''}"`,
-									word.baseForm && `data-base-form="${word.baseForm}"`,
-									word.baseTranslation && `data-base-translation="${word.baseTranslation}"`,
-									word.cerf && `data-cerf="${word.CERF}"`,
-									word.isHomonym && `data-homonyms="${word.homonymsCount}"`
-								].filter(Boolean).join(' ');
-								
-								const replacement = `<span ${attributes}>${originalWord}</span>`;
-								markedText = markedText.slice(0, index) + replacement + markedText.slice(index + word.text.length);
-								
-								offset += replacement.length - word.text.length;
-								wordPositions.add(positionKey);
-								hasChanges = true;
-								break; // Pažymime tik pirmą radimą
-							}
-							index = textLower.indexOf(wordLower, index + 1);
+						// Ieškome žodžio tekste
+						const index = textLower.indexOf(wordLower);
+						if (index !== -1) {
+							console.log(`Rastas žodis "${word.text}" pozicijoje ${index}`);
+							// Paimame originalų tekstą iš tos vietos
+							const originalWord = markedText.slice(index, index + word.text.length);
+							// Pakeičiame originalų tekstą su span
+							markedText = markedText.slice(0, index) + 
+									`${originalWord}` + 
+									markedText.slice(index + word.text.length);
+							hasChanges = true;
 						}
 					});
-					
+					// Jei buvo pakeitimų, atnaujiname mazgą
 					if (hasChanges) {
 						const span = document.createElement('span');
 						span.innerHTML = markedText;
@@ -224,11 +206,12 @@ export class HtmlConverter {
 			
 			walkNodes(tempDiv);
 			
+			// Išvalome HTML su DOMPurify
 			const markedHtml = DOMPurify.sanitize(tempDiv.innerHTML, {
 				ALLOWED_TAGS: this.ALLOWED_TAGS,
 				ALLOWED_CLASSES: this.ALLOWED_CLASSES,
 				KEEP_CONTENT: true,
-				ALLOW_DATA_ATTR: true
+				ALLOW_DATA_ATTR: false,
 			});
 			
 			console.log(`${this.APP_NAME} Žodžių žymėjimas baigtas`);
