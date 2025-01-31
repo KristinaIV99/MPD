@@ -7,193 +7,225 @@ import { HtmlConverter } from './html-converter.js';
 
 class App {
   constructor() {
-    this.APP_NAME = '[App]';
-    this.initComponents();
-    this.initUI();
-    this.bindEvents();
-    this.isProcessing = false;
-    console.log(`${this.APP_NAME} Inicializuota`);
-  }
+	  this.APP_NAME = '[App]';
+      this.reader = new TextReader();
+      this.counter = new WordCounter();
+      this.phraseReader = new PhraseReader();
+      this.wordReader = new WordReader();
+      this.unknownWordsExporter = new UnknownWordsExporter();
+      this.htmlConverter = new HtmlConverter(this.wordReader, this.phraseReader);
 
-  initComponents() {
-    this.reader = new TextReader();
-    this.counter = new WordCounter();
-    this.phraseReader = new PhraseReader();
-    this.wordReader = new WordReader();
-    this.unknownExporter = new UnknownWordsExporter();
-    this.htmlConverter = new HtmlConverter();
-
-    this.initializeServices()
-      .then(() => console.log(`${this.APP_NAME} Visi servisai inicijuoti`))
-      .catch(error => this.showFatalError(error));
-  }
-
-  async initializeServices() {
-    try {
-      await Promise.all([
-        this.phraseReader.initialize(),
-        this.wordReader.initialize(),
-        this.unknownExporter.initialize()
-      ]);
+      // Inicializuojame PhraseReader
+      this.phraseReader.initialize().catch(error => {
+          console.error(`${this.APP_NAME} Klaida inicializuojant PhraseReader:`, error);
+      });
       
-      this.counter.setKnownWords(this.wordReader.knownWords);
-      console.log(`${this.APP_NAME} Žinomi žodžiai:`, this.wordReader.knownWords.size);
-      console.log(`${this.APP_NAME} Žinomos frazės:`, this.phraseReader.phrases.size);
-      
-    } catch (error) {
-      console.error(`${this.APP_NAME} Kritinė inicializacijos klaida:`, error);
-      throw error;
-    }
-  }
+      // Inicializuojame WordReader ir nustatome žinomus žodžius į WordCounter
+	  this.wordReader.initialize()
+        .then(() => {
+          this.counter.setKnownWords(this.wordReader);
+          console.log(`${this.APP_NAME} Žinomi žodžiai nustatyti:`, this.counter.knownWords.size);
+        })
+        .catch(error => {
+          console.error(`${this.APP_NAME} Klaida inicializuojant WordReader:`, error);
+        });
+
+      this.unknownWordsExporter.initialize().catch(error => {
+          console.error(`${this.APP_NAME} Klaida inicializuojant UnknownWordsExporter:`, error);
+      });
+
+		console.log(`${this.APP_NAME} Konstruktorius inicializuotas`);
+		this.initUI();
+		this.bindEvents();
+		this.isProcessing = false;
+	}
 
   initUI() {
-    this.ui = {
-      fileInput: document.getElementById('fileInput'),
-      exportBtn: document.getElementById('exportUnknownWords'),
-      content: document.getElementById('content'),
-      progress: document.createElement('div'),
-      status: document.createElement('div'),
-      wordStats: document.createElement('div')
-    };
-
-    this.ui.progress.className = 'progress-bar';
-    this.ui.status.className = 'status-message';
-    this.ui.wordStats.className = 'word-stats';
-    
-    document.body.prepend(
-      this.ui.progress,
-      this.ui.status,
-      this.ui.wordStats
-    );
+    this.fileInput = document.getElementById('fileInput');
+    this.exportButton = document.getElementById('exportUnknownWords');
+    this.content = document.getElementById('content');
+    this.wordCount = document.createElement('div');
+    this.wordCount.className = 'word-count';
+    this.progressBar = document.createElement('div');
+    this.progressBar.className = 'progress-bar';
+    document.body.prepend(this.progressBar);
+    document.body.prepend(this.wordCount);
+    console.log(`${this.APP_NAME} UI elementai inicializuoti`);
   }
 
   bindEvents() {
-    this.ui.fileInput.addEventListener('change', e => this.handleFile(e));
-    this.ui.exportBtn.addEventListener('click', () => this.handleExport());
-    this.reader.events.addEventListener('progress', e => this.updateProgress(e.detail));
-  }
-
-  async handleFile(e) {
-    if (this.isProcessing) {
-      console.warn(`${this.APP_NAME} Atšaukiama esama operacija`);
-      this.reader.abort();
-    }
-
-    try {
-      this.startProcessing();
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const text = await this.reader.readFile(file);
-      const stats = this.processTextStatistics(text);
-      const phrases = this.phraseReader.findPhrases(text);
-      
-      this.updateStatisticsDisplay(stats);
-      await this.displayContent(text, phrases);
-
-    } catch (error) {
-      this.handleError(error);
-    } finally {
-      this.finishProcessing();
-    }
-  }
-
-  processTextStatistics(text) {
-    const stats = this.counter.countWords(text);
-    console.log(`${this.APP_NAME} Statistika:`, stats);
-    return stats;
-  }
-
-  async displayContent(text, phrases) {
-    try {
-      let htmlContent = await this.htmlConverter.convertToHtml(text);
-      
-      if (phrases.length > 0) {
-        htmlContent = await this.htmlConverter.markPhrases(htmlContent, phrases);
-        console.log(`${this.APP_NAME} Pažymėtos frazės:`, phrases.length);
-      }
-
-      this.renderContent(htmlContent);
-      
-    } catch (error) {
-      throw new Error(`HTML konversijos klaida: ${error.message}`);
-    }
-  }
-
-  renderContent(html) {
-    const container = document.createElement('div');
-    container.className = 'content-wrapper';
-    container.innerHTML = html;
-    this.ui.content.replaceChildren(container);
-  }
-
-  updateStatisticsDisplay({ totalWords, uniqueWords, unknownWords }) {
-    this.ui.wordStats.innerHTML = `
-      <div class="stat-item">Viso žodžių: ${totalWords}</div>
-      <div class="stat-item">Unikalūs: ${uniqueWords}</div>
-      <div class="stat-item">Nežinomi: ${unknownWords}</div>
-    `;
-  }
-
-  updateProgress({ percent }) {
-    this.ui.progress.style.width = `${percent}%`;
-    if (percent >= 100) {
-      setTimeout(() => this.ui.progress.style.width = '0%', 500);
-    }
+    this.fileInput.addEventListener('change', (e) => this.handleFile(e));
+    this.exportButton.addEventListener('click', () => this.handleExport());
+    this.reader.events.addEventListener('progress', (e) => this.updateProgress(e.detail));
+    console.log(`${this.APP_NAME} Event listeners prijungti`);
   }
 
   async handleExport() {
-    if (!this.ui.content.textContent.trim()) {
-      this.showWarning('Nėra teksto eksportavimui');
-      return;
+      const text = this.content.textContent;
+      if (!text) {
+        console.warn(`${this.APP_NAME} Nėra teksto eksportavimui`);
+        return;
+      }
+
+      this.unknownWordsExporter.processText(text);
+      this.unknownWordsExporter.exportToTxt();
+  }
+
+  async handleFile(e) {
+    try {
+      if(this.isProcessing) {
+        console.warn(`${this.APP_NAME} Atšaukiama esama užklausa...`);
+        this.reader.abort();
+      }
+      console.log(`${this.APP_NAME} Pradedamas naujo failo apdorojimas`);
+      this.isProcessing = true;
+      this.fileInput.disabled = true;
+      this.exportButton.disabled = true;
+      this.showLoadingState();
+      const file = e.target.files[0];
+      if(!file) {
+        console.warn(`${this.APP_NAME} Nepasirinktas failas`);
+        return;
+      }
+      console.log(`${this.APP_NAME} Apdorojamas failas: ${file.name}`);
+      const text = await this.reader.readFile(file);
+      console.log(`${this.APP_NAME} Failas sėkmingai nuskaitytas`);
+      
+      this.exportButton.disabled = false;
+      
+      // Skaičiuojame žodžius ir gauname statistiką
+      console.log(`${this.APP_NAME} Pradedamas žodžių skaičiavimas`);
+      const wordCount = this.counter.countWords(text);
+      const stats = this.counter.getWordStatistics(wordCount.words);
+      console.log(`${this.APP_NAME} Žodžių suskaičiuota:`, wordCount.totalWords);
+      console.log(`${this.APP_NAME} Statistika:`, stats);
+
+      // Atnaujiname UI
+      this.updateWordCount(wordCount, stats);
+      
+
+      // ANTRA: Ieškome frazių
+      const phraseResults = this.phraseReader.processText(text);
+      console.log(`${this.APP_NAME} Rastos frazės:`, phraseResults.phrases);
+
+      // TREČIA: Ieškome pavienių žodžių
+      const wordResults = this.wordReader.processText(text);
+      console.log(`${this.APP_NAME} Rasti žodžiai:`, wordResults.words);
+
+      this.setContent(text, phraseResults.phrases, wordResults.words);
+      console.log(`${this.APP_NAME} Teksto turinys sėkmingai įkeltas`);
+    } catch(error) {
+      console.error(`${this.APP_NAME} Failo apdorojimo klaida:`, error);
+      this.handleError(error);
+    } finally {
+      console.log(`${this.APP_NAME} Baigiamas failo apdorojimas`);
+      this.isProcessing = false;
+      this.fileInput.disabled = false;
+      this.fileInput.value = '';
+      this.hideLoadingState();
     }
-    this.unknownExporter.exportToTxt(this.ui.content.textContent);
   }
 
-  startProcessing() {
-    this.isProcessing = true;
-    this.ui.fileInput.disabled = true;
-    this.ui.content.innerHTML = '<div class="loading">Kraunama...</div>';
-  }
+  updateWordCount(count, stats) {
+      // Išvalome seną turinį
+      this.wordCount.textContent = '';
+      
+      const elements = [
+        { text: `Žodžių skaičius: ${count.totalWords}` },
+        { text: `Unikalių žodžių: ${stats.uniqueWords}` },
+        { text: `Nežinomų žodžių: ${stats.unknownWords || 0}` }
+      ];
 
-  finishProcessing() {
-    this.isProcessing = false;
-    this.ui.fileInput.disabled = false;
-    this.ui.fileInput.value = '';
-  }
+      elements.forEach(element => {
+        const div = document.createElement('div');
+        div.textContent = element.text;
+        this.wordCount.appendChild(div);
+      });
+    
+      console.log(`${this.APP_NAME} Atnaujinta žodžių statistika`);
+    }
 
-  showFatalError(error) {
-    this.ui.status.innerHTML = `
-      <div class="error fatal">
-        <h3>Kritinė klaida</h3>
-        <p>${error.message}</p>
-        <p>Perkraukite puslapį</p>
-      </div>
-    `;
+  async setContent(text, phrases = [], words = []) {  
+    try {
+        console.log(`${this.APP_NAME} Pradedama HTML konversija`);
+        
+        // Konvertuojame į HTML naudodami HtmlConverter
+        let htmlContent = await this.htmlConverter.convertToHtml(text);
+        
+        console.log(`${this.APP_NAME} Pradedamas frazių žymėjimas`);
+        htmlContent = await this.htmlConverter.markPhrases(htmlContent, phrases);
+        console.log(`${this.APP_NAME} Frazių žymėjimas baigtas`);
+        
+        const div = document.createElement('div');
+        div.className = 'text-content';
+        // Vietoj textContent naudojame innerHTML
+        div.innerHTML = htmlContent;
+        
+        // Jei yra rastų frazių, išvedame jas į konsolę
+        if (phrases.length > 0) {
+            console.log(`${this.APP_NAME} Rastos frazės tekste:`, 
+                phrases.map(p => ({
+                    text: p.text,
+                    pozicija: `${p.start}-${p.end}`,
+                    tipas: p.type
+                }))
+            );
+        }
+        
+        // Jei yra rastų žodžių, išvedame juos į konsolę
+        if (words.length > 0) {
+            console.log(`${this.APP_NAME} Rasti žodžiai tekste:`, 
+                words.map(w => ({
+                    text: w.text,
+                    pozicija: `${w.start}-${w.end}`,
+                    tipas: w.type
+                }))
+            );
+        }
+        
+        this.content.replaceChildren(div);
+        console.log(`${this.APP_NAME} HTML konversija baigta`);
+    } catch (error) {
+        console.error(`${this.APP_NAME} Klaida konvertuojant į HTML:`, error);
+        this.handleError(error);
+    }
   }
 
   handleError(error) {
-    console.error(`${this.APP_NAME} Klaida:`, error);
-    this.ui.content.innerHTML = `
-      <div class="error">
-        <h3>Operacijos klaida</h3>
-        <p>${error.message}</p>
-      </div>
-    `;
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error';
+    errorDiv.textContent = `Klaida: ${error.message}`;
+    this.content.replaceChildren(errorDiv);
   }
 
-  showWarning(message) {
-    this.ui.status.innerHTML = `<div class="warning">⚠️ ${message}</div>`;
-    setTimeout(() => this.ui.status.innerHTML = '', 3000);
+  updateProgress({ percent }) {
+    this.progressBar.style.transition = 'width 0.3s ease'; // Pridedame sklandų perėjimą
+    this.progressBar.style.width = `${percent}%`;
+    
+    if (percent >= 100) {
+      setTimeout(() => {
+        this.progressBar.style.transition = 'none'; // Išjungiam perėjimą resetui
+        this.progressBar.style.width = '0%';
+      }, 500);
+    }
+  }
+
+  showLoadingState() {
+    const loader = document.createElement('div');
+    loader.className = 'loading';
+    const text = document.createElement('p');
+    text.textContent = 'Kraunama...';
+    loader.appendChild(text);
+    this.content.replaceChildren(loader);
+  }
+
+  hideLoadingState() {
+    const loader = this.content.querySelector('.loading');
+    if(loader) loader.remove();
   }
 }
 
-// Paleidimas
 window.addEventListener('DOMContentLoaded', () => {
-  try {
-    window.app = new App();
-    console.log('[Main] Aplikacija parengta');
-  } catch (error) {
-    document.body.innerHTML = `<div class="error">Nepavyko paleisti aplikacijos: ${error.message}</div>`;
-  }
+  console.log('[Main] Aplikacija inicializuojama...');
+  window.app = new App();
 });
