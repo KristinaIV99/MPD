@@ -65,7 +65,6 @@ export class HtmlConverter {
             html = DOMPurify.sanitize(html, {
                 ALLOWED_TAGS: this.ALLOWED_TAGS,
                 ALLOWED_CLASSES: ['dialog', 'triple-space', 'after-hr'],
-                ALLOWED_ATTR: ['class', 'style'],
                 KEEP_CONTENT: true,
                 ALLOW_DATA_ATTR: false,
             });
