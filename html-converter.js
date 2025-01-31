@@ -54,7 +54,7 @@ export class HtmlConverter {
             console.log('Po dialogų grąžinimo:', html);
             
             // Tvarkome trigubas eilutes (dabar naudojame §SECTION_BREAK§)
-            html = html.replace(/§SECTION_BREAK§/g, '</p><div class="triple-space" style="height: 1.5em;"></div><p>');
+            html = html.replace(/§SECTION_BREAK§/g, '</p><div class="triple-space"></div><p>');
             console.log('Po sekcijų skirtukų:', processed);
             
             // Tvarkome horizontalią liniją ir sekantį tekstą
