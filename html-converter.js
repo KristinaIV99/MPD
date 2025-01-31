@@ -5,7 +5,6 @@ import { AhoCorasick } from './aho-corasick.js';
 export class HtmlConverter {
     constructor() {
         this.APP_NAME = '[HtmlConverter]';
-        this.ahoCorasick = new AhoCorasick();
         
         marked.setOptions({
             breaks: true,
@@ -28,12 +27,11 @@ export class HtmlConverter {
             'div', 'span'
         ];
         
-        this.ALLOWED_CLASSES = ['dialog', 'triple-space', 'after-hr', 'phrases', 'word', 'homonym'];
+        this.ALLOWED_CLASSES = ['dialog', 'triple-space', 'after-hr', 'phrases'];
     }
 
     async convertToHtml(text) {
         try {
-            // Pataisyti regex išraiškas
             let processed = text
                 .replace(/^[-\u2013\u2014]\s(.+)$/gm, '###DIALOG###$1')
                 .replace(/^—+$/gm, '<hr>')
@@ -61,7 +59,7 @@ export class HtmlConverter {
     markPhrases(html, phrases) {
         try {
             const ac = new AhoCorasick();
-            phrases.forEach(phrase => ac.addPattern(phrase.text, phrase));
+            phrases.forEach(phrase => ac.addPattern(phrase.text.toLowerCase(), 'phrases'));
             ac.buildFailureLinks();
 
             const tempDiv = document.createElement('div');
@@ -95,68 +93,19 @@ export class HtmlConverter {
 
         let newContent = text;
         matches.forEach(match => {
-            const replacement = `<span class="${match.type}">${match.pattern}</span>`;
+            const originalText = text.slice(match.start, match.end);
+            const replacement = `<span class="phrases">${originalText}</span>`;
             newContent = this.spliceString(newContent, match.start, match.end - match.start, replacement);
         });
 
         if (newContent !== text) {
             const wrapper = document.createElement('span');
             wrapper.innerHTML = newContent;
-            node.replaceWith(wrapper);
+            node.parentNode.replaceChild(wrapper, node);
         }
     }
 
     spliceString(str, start, deleteCount, insert) {
         return str.slice(0, start) + insert + str.slice(start + deleteCount);
-    }
-
-    markWords(html, words) {
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
-        
-        words.sort((a, b) => b.start - a.start).forEach(word => {
-            const textNode = this.findTextNodeAtOffset(tempDiv, word.start);
-            if (textNode) {
-                this.splitAndWrap(textNode, word.start, word.end);
-            }
-        });
-        
-        return DOMPurify.sanitize(tempDiv.innerHTML, {
-            ALLOWED_TAGS: this.ALLOWED_TAGS,
-            ALLOWED_CLASSES: this.ALLOWED_CLASSES,
-            KEEP_CONTENT: true
-        });
-    }
-
-    findTextNodeAtOffset(node, targetOffset, currentOffset = { value: 0 }) {
-        if (node.nodeType === Node.TEXT_NODE) {
-            if (currentOffset.value + node.textContent.length >= targetOffset) {
-                return node;
-            }
-            currentOffset.value += node.textContent.length;
-        } else if (node.nodeType === Node.ELEMENT_NODE) {
-            for (const child of node.childNodes) {
-                const result = this.findTextNodeAtOffset(child, targetOffset, currentOffset);
-                if (result) return result;
-            }
-        }
-        return null;
-    }
-
-    splitAndWrap(textNode, start, end) {
-        const content = textNode.textContent;
-        const before = content.slice(0, start);
-        const target = content.slice(start, end);
-        const after = content.slice(end);
-
-        const wrapper = document.createElement('span');
-        wrapper.className = 'word';
-        wrapper.textContent = target;
-
-        const parent = textNode.parentNode;
-        parent.insertBefore(document.createTextNode(before), textNode);
-        parent.insertBefore(wrapper, textNode);
-        parent.insertBefore(document.createTextNode(after), textNode);
-        parent.removeChild(textNode);
     }
 }
