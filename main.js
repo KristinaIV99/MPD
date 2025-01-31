@@ -156,42 +156,29 @@ class App {
         if (phrases.length > 0) {
             console.log(`${this.APP_NAME} Pradedamas frazių žymėjimas`);
             htmlContent = await this.htmlConverter.markPhrases(htmlContent, phrases);
-            console.log(`${this.APP_NAME} Frazių žymėjimas baigtas`);
+            console.log(`${this.APP_NAME} Rastos frazės (pirmos 10):`, 
+                phrases.slice(0, 10).map(p => ({
+                    text: p.text,
+                    pozicija: `${p.start}-${p.end}`
+                }))
+            );
         }
         
         // Žymime žodžius
         if (words.length > 0) {
             console.log(`${this.APP_NAME} Pradedamas žodžių žymėjimas`);
             htmlContent = await this.htmlConverter.markWords(htmlContent, words);
-            console.log(`${this.APP_NAME} Žodžių žymėjimas baigtas`);
+            console.log(`${this.APP_NAME} Rasti žodžiai (pirmi 10):`, 
+                words.slice(0, 10).map(w => ({
+                    text: w.text,
+                    pozicija: `${w.start}-${w.end}`
+                }))
+            );
         }
         
         const div = document.createElement('div');
         div.className = 'text-content';
-        // Vietoj textContent naudojame innerHTML
         div.innerHTML = htmlContent;
-        
-        // Jei yra rastų frazių, išvedame jas į konsolę
-        if (phrases.length > 0) {
-            console.log(`${this.APP_NAME} Rastos frazės tekste:`, 
-                phrases.map(p => ({
-                    text: p.text,
-                    pozicija: `${p.start}-${p.end}`,
-                    tipas: p.type
-                }))
-            );
-        }
-        
-        // Jei yra rastų žodžių, išvedame juos į konsolę
-        if (words.length > 0) {
-            console.log(`${this.APP_NAME} Rasti žodžiai tekste:`, 
-                words.map(w => ({
-                    text: w.text,
-                    pozicija: `${w.start}-${w.end}`,
-                    tipas: w.type
-                }))
-            );
-        }
         
         this.content.replaceChildren(div);
         console.log(`${this.APP_NAME} HTML konversija baigta`);
