@@ -124,7 +124,7 @@ p {
     }
 
  p {
-        margin: 0.5em 0; /* Sumažiname nuo 1em iki 0.5em */
+        margin: 0.5em 0 !important;
         text-align: justify;
     }
  }
@@ -135,7 +135,7 @@ p {
 }
 
 div.triple-space {
-    height: 1em !important; /* Sumažiname nuo 1.5em iki 1em */
+    height: 1em !important;
     clear: both;
     display: block;
 }
