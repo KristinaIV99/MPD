@@ -159,7 +159,7 @@ class App {
         
         // Pridedame žodžių žymėjimą
         console.log(`${this.APP_NAME} Pradedamas žodžių žymėjimas`);
-        htmlContent = await this.htmlConverter.markWords(htmlContent, words);
+        htmlContent = await this.htmlConverter.markWords(htmlContent, words, 100);
         console.log(`${this.APP_NAME} Žodžių žymėjimas baigtas`);
         
         const div = document.createElement('div');
