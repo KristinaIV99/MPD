@@ -53,7 +53,7 @@ export class HtmlConverter {
             console.log('Po marked konversijos:', html);
             
             // Grąžiname dialogus
-            html = html.replace(/<p>###DIALOG###(.+?)<\/p>/g, '<p class="dialog">–$1</p>');
+            html = html.replace(/<p>###DIALOG###(.+?)<\/p>/g, '<p class="dialog">– $1</p>');
             console.log('Po dialogų grąžinimo:', html);
             
             // Tvarkome trigubas eilutes
