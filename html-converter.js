@@ -85,28 +85,48 @@ export class HtmlConverter {
 
   processTextNode(node, ac) {
     const text = node.textContent;
-    const matches = ac.search(text)
-      .sort((a, b) => b.start - a.start);
-
+    let matches = ac.search(text);
+    
+    // Pašaliname persidengimus
+    matches = this.removeOverlaps(matches);
+    
+    // Rūšiuojame nuo galo, kad indeksai nesusimaišytų
+    matches.sort((a, b) => b.start - a.start);
+    
     let newContent = text;
     matches.forEach(match => {
-      const original = text.slice(match.start, match.end);
-      newContent = this.spliceString(
-        newContent, 
-        match.start, 
-        match.end - match.start, 
-        `<span class="phrases">${original}</span>`
-      );
+        const original = text.slice(match.start, match.end);
+        newContent = this.spliceString(
+            newContent, 
+            match.start, 
+            match.end - match.start, 
+            `<span class="phrases">${original}</span>`
+        );
     });
-
+    
     if (newContent !== text) {
-      const wrapper = document.createElement('span');
-      wrapper.innerHTML = newContent;
-      node.replaceWith(wrapper);
+        const wrapper = document.createElement('span');
+        wrapper.innerHTML = newContent;
+        node.replaceWith(wrapper);
     }
   }
 
-  spliceString(str, start, deleteCount, insert) {
-    return str.slice(0, start) + insert + str.slice(start + deleteCount);
+removeOverlaps(matches) {
+    if (matches.length <= 1) return matches;
+    
+    // Rūšiuojame pagal pradžios poziciją
+    matches.sort((a, b) => a.start - b.start);
+    
+    const result = [matches[0]];
+    let lastEnd = matches[0].end;
+    
+    for (let i = 1; i < matches.length; i++) {
+        if (matches[i].start >= lastEnd) {
+            result.push(matches[i]);
+            lastEnd = matches[i].end;
+        }
+    }
+    
+    return result;
   }
 }
