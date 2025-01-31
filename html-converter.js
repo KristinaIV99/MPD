@@ -51,6 +51,7 @@ export class HtmlConverter {
       // 1. Sukuriame automatoną
       const ac = new AhoCorasick();
       phrases.forEach(phrase => {
+        console.log("Pridedama frazė:", phrase.text);
         ac.addPattern(phrase.text.toLowerCase(), 'phrase');
       });
       ac.buildFailureLinks();
@@ -86,6 +87,7 @@ export class HtmlConverter {
   processTextNode(node, ac) {
     const text = node.textContent;
     let matches = ac.search(text);
+    console.log("Rastos frazės:", matches);
     
     // Surūšiuojame frazes pagal ilgį (ilgiausios pirma)
     matches.sort((a, b) => {
