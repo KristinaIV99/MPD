@@ -84,16 +84,14 @@ export class HtmlConverter {
     markPhrases(html, phrases) {
 		try {
 			console.log(`${this.APP_NAME} Pradedamas frazių žymėjimas`);
-			console.log('Gautas HTML:', html);
 			console.log('Gautos frazės:', phrases);
 			
 			// Sukuriame laikiną DOM elementą
 			const tempDiv = document.createElement('div');
 			tempDiv.innerHTML = html;
-			console.log('Sukurtas laikinas DIV:', tempDiv.innerHTML);
 			
 			// Rūšiuojame frazes nuo ilgiausios iki trumpiausios
-			const sortedPhrases = [...phrases].sort((a, b) => b.text.length - a.text.length);
+			const sortedPhrases = [...phrases].sort((a, b) => b.start - a.start);
 			console.log('Surūšiuotos frazės:', sortedPhrases);
 			
 			// Einame per tekstinius mazgus
@@ -106,20 +104,13 @@ export class HtmlConverter {
 					let hasChanges = false;
 					let markedText = text;
 
+					// Naudojame jau turimas pozicijas
 					sortedPhrases.forEach(phrase => {
-						const textLower = markedText.toLowerCase();
-						const phraseLower = phrase.text.toLowerCase();
-						
-						// Ieškome frazės tekste
-						const index = textLower.indexOf(phraseLower);
-						if (index !== -1) {
-							console.log(`Rasta frazė "${phrase.text}" pozicijoje ${index}`);
-							// Paimame originalų tekstą iš tos vietos
-							const originalPhrase = markedText.slice(index, index + phrase.text.length);
-							// Pakeičiame originalų tekstą su span
-							markedText = markedText.slice(0, index) + 
+						if (phrase.start !== undefined && phrase.end !== undefined) {
+							const originalPhrase = phrase.text;
+							markedText = markedText.slice(0, phrase.start) + 
 									`<span class="phrases">${originalPhrase}</span>` + 
-									markedText.slice(index + phrase.text.length);
+									markedText.slice(phrase.end);
 							hasChanges = true;
 						}
 					});
@@ -156,16 +147,14 @@ export class HtmlConverter {
     markWords(html, words) {
 		try {
 			console.log(`${this.APP_NAME} Pradedamas žodžių žymėjimas`);
-			console.log('Gautas HTML:', html);
 			console.log('Gauti žodžiai:', words);
 			
 			// Sukuriame laikiną DOM elementą
 			const tempDiv = document.createElement('div');
 			tempDiv.innerHTML = html;
-			console.log('Sukurtas laikinas DIV:', tempDiv.innerHTML);
 			
 			// Rūšiuojame žodžius nuo ilgiausio iki trumpiausio
-			const sortedWords = [...words].sort((a, b) => b.text.length - a.text.length);
+			const sortedWords = [...words].sort((a, b) => b.start - a.start);
 			console.log('Surūšiuoti žodžiai:', sortedWords);
 			
 			// Einame per tekstinius mazgus
@@ -176,20 +165,14 @@ export class HtmlConverter {
 					// Tikriname ar tekstas turi žodžių
 					let hasChanges = false;
 					let markedText = text;
+					
+					// Naudojame jau turimas pozicijas
 					sortedWords.forEach(word => {
-						const textLower = markedText.toLowerCase();
-						const wordLower = word.text.toLowerCase();
-						
-						// Ieškome žodžio tekste
-						const index = textLower.indexOf(wordLower);
-						if (index !== -1) {
-							console.log(`Rastas žodis "${word.text}" pozicijoje ${index}`);
-							// Paimame originalų tekstą iš tos vietos
-							const originalWord = markedText.slice(index, index + word.text.length);
-							// Pakeičiame originalų tekstą su span
-							markedText = markedText.slice(0, index) + 
-									`<span class="word">${originalWord}</span>` +
-									markedText.slice(index + word.text.length);
+						if (word.start !== undefined && word.end !== undefined) {
+							const originalWord = word.text;
+							markedText = markedText.slice(0, word.start) + 
+									`<span class="word">${originalWord}</span>` + 
+									markedText.slice(word.end);
 							hasChanges = true;
 						}
 					});
