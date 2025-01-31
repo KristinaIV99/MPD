@@ -152,9 +152,15 @@ class App {
         // Konvertuojame į HTML naudodami HtmlConverter
         let htmlContent = await this.htmlConverter.convertToHtml(text);
         
+        // Žymime frazes
         console.log(`${this.APP_NAME} Pradedamas frazių žymėjimas`);
         htmlContent = await this.htmlConverter.markPhrases(htmlContent, phrases);
         console.log(`${this.APP_NAME} Frazių žymėjimas baigtas`);
+        
+        // Pridedame žodžių žymėjimą
+        console.log(`${this.APP_NAME} Pradedamas žodžių žymėjimas`);
+        htmlContent = await this.htmlConverter.markWords(htmlContent, words);
+        console.log(`${this.APP_NAME} Žodžių žymėjimas baigtas`);
         
         const div = document.createElement('div');
         div.className = 'text-content';
