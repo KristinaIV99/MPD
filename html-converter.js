@@ -93,11 +93,18 @@ export class HtmlConverter {
   processTextNode(node, ac) {
     const text = node.textContent;
     let matches = ac.search(text);
-    console.log("Rastos frazės:", matches);
     
-    // Surūšiuojame frazes pagal ilgį (ilgiausios pirma)
+    // Pašaliname dublikatus pagal poziciją ir tekstą
+    matches = matches.filter((match, index, self) => 
+        index === self.findIndex(m => 
+            m.start === match.start && 
+            m.pattern === match.pattern
+        )
+    );
+
+    // Surūšiuojame pagal ilgį ir poziciją
     matches.sort((a, b) => {
-        if (a.pattern.length === b.pattern.length) {
+        if (b.pattern.length === a.pattern.length) {
             return a.start - b.start;
         }
         return b.pattern.length - a.pattern.length;
@@ -106,34 +113,24 @@ export class HtmlConverter {
     let validMatches = [];
     for (const current of matches) {
         let isValid = true;
+        let isContainedInLarger = false;
 
         for (const existing of validMatches) {
-            // Tikriname ar tai leistinas persidengimas
-            const isSmallerInLarger = (
-                current.start >= existing.start && 
-                current.end <= existing.end
-            );
-            
-            // Tikriname ar frazių galai/pradžios sutampa
-            const isEndMeetingStart = (
-                current.start === existing.end || 
-                current.end === existing.start
-            );
+            // Tikriname ar dabartinė frazė yra didesnės frazės dalis
+            if (current.start >= existing.start && current.end <= existing.end) {
+                isContainedInLarger = true;
+                break;
+            }
 
-            // Jei nei viena sąlyga netinka, frazė negalioja
-            if (!isSmallerInLarger && !isEndMeetingStart) {
-                const hasOverlap = (
-                    current.start < existing.end && 
-                    current.end > existing.start
-                );
-                if (hasOverlap) {
-                    isValid = false;
-                    break;
-                }
+            // Tikriname ar frazės persidengia
+            if (current.start < existing.end && current.end > existing.start) {
+                isValid = false;
+                break;
             }
         }
 
-        if (isValid) {
+        // Pridedame frazę tik jei ji arba yra savarankiška, arba yra didesnės frazės dalis
+        if (isValid || isContainedInLarger) {
             validMatches.push(current);
         }
     }
