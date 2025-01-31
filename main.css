@@ -96,6 +96,15 @@
     padding: 20px;
 }
 
+/* Bazinis teksto formatavimas */
+p {
+    text-align: justify; /* Tekstas lygiuojamas pagal abi puses */
+    margin: 1em 0;      /* Vertikalūs tarpai tarp pastraipų */
+    hyphens: auto;      /* Automatinis žodžių perkėlimas */
+    -webkit-hyphens: auto;
+    -ms-hyphens: auto;
+}
+
 @media (max-width: 768px) {
     .text-content {
         font-size: 16px; /* Geresnis skaitomumas mobiliuose */
@@ -113,13 +122,20 @@
         font-size: 14px;
         padding: 10px;
     }
-}
+
+ p {
+        padding: 0 1em; /* Šoninės paraštės mobilioje versijoje */
+    }
+ }
+
 .dialog {
-    margin: 1em 0;
+    text-align: justify;
+    margin: 0.5em 0;
 }
 
 .triple-space {
     height: 3em;
+    clear: both;
 }
 
 hr {
