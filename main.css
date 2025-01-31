@@ -133,10 +133,13 @@ p {
     margin: 0.5em 0;
 }
 
-.triple-space {
-    height: calc(3em * 0.7) !important;
+div.triple-space {
+    height: 1.5em !important;  /* Tiesiog nustatome fiksuotą dydį */
+    background-color: #f0f0f0; /* Pridedame foną, kad matytume elementą */
+    margin: 0 !important;
+    padding: 0 !important;
     clear: both;
-    min-height: 1.5em;
+    display: block;
 }
 
 hr {
