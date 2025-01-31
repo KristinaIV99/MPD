@@ -124,7 +124,8 @@ p {
     }
 
  p {
-        padding: 0 1em; /* Šoninės paraštės mobilioje versijoje */
+        margin: 0.5em 0; /* Sumažiname nuo 1em iki 0.5em */
+        text-align: justify;
     }
  }
 
@@ -134,10 +135,7 @@ p {
 }
 
 div.triple-space {
-    height: 1.5em !important;  /* Tiesiog nustatome fiksuotą dydį */
-    background-color: #f0f0f0; /* Pridedame foną, kad matytume elementą */
-    margin: 0 !important;
-    padding: 0 !important;
+    height: 1em !important; /* Sumažiname nuo 1.5em iki 1em */
     clear: both;
     display: block;
 }
