@@ -83,98 +83,54 @@ export class HtmlConverter {
 
     markPhrases(html, phrases) {
 		try {
-            if (!phrases.length) return html;
-            
-            console.log(`${this.APP_NAME} Pradedamas frazių žymėjimas`);
-            
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = html;
-            
-            const sortedPhrases = [...phrases].sort((a, b) => b.start - a.start);
-            
-            const walkNodes = (node) => {
-                if (node.nodeType === Node.TEXT_NODE) {
-                    let text = node.textContent;
-                    let hasChanges = false;
-                    let markedText = text;
-
-                    sortedPhrases.forEach(phrase => {
-                        if (phrase.start !== undefined && phrase.end !== undefined) {
-                            const originalPhrase = phrase.text;
-                            markedText = markedText.slice(0, phrase.start) + 
-                                    `<span class="phrases">${originalPhrase}</span>` + 
-                                    markedText.slice(phrase.end);
-                            hasChanges = true;
-                        }
-                    });
-
-                    if (hasChanges) {
-                        const span = document.createElement('span');
-                        span.innerHTML = markedText;
-                        node.parentNode.replaceChild(span, node);
-                    }
-                } else if (node.nodeType === Node.ELEMENT_NODE) {
-                    Array.from(node.childNodes).forEach(walkNodes);
-                }
-            };
-            
-            walkNodes(tempDiv);
-            
-            const markedHtml = DOMPurify.sanitize(tempDiv.innerHTML, {
-                ALLOWED_TAGS: this.ALLOWED_TAGS,
-                ALLOWED_CLASSES: this.ALLOWED_CLASSES,
-                KEEP_CONTENT: true,
-                ALLOW_DATA_ATTR: false,
-            });
-            
-            console.log(`${this.APP_NAME} Frazių žymėjimas baigtas`);
-            return markedHtml;
-            
-        } catch (error) {
-            console.error(`${this.APP_NAME} Klaida žymint frazes:`, error);
-            throw error;
-        }
-    }
+			if (!phrases.length) return html;
+			console.log(`${this.APP_NAME} Pradedamas frazių žymėjimas`);
+			
+			let markedText = html;
+			const sortedPhrases = [...phrases].sort((a, b) => b.start - a.start);
+			
+			sortedPhrases.forEach(phrase => {
+				if (phrase.start !== undefined && phrase.end !== undefined) {
+					markedText = markedText.slice(0, phrase.start) + 
+							`<span class="phrases">${phrase.text}</span>` + 
+							markedText.slice(phrase.end);
+				}
+			});
+			
+			const cleanHtml = DOMPurify.sanitize(markedText, {
+				ALLOWED_TAGS: this.ALLOWED_TAGS,
+				ALLOWED_CLASSES: this.ALLOWED_CLASSES,
+				KEEP_CONTENT: true,
+				ALLOW_DATA_ATTR: false,
+			});
+			
+			console.log(`${this.APP_NAME} Frazių žymėjimas baigtas`);
+			return cleanHtml;
+		} catch (error) {
+			console.error(`${this.APP_NAME} Klaida žymint frazes:`, error);
+			throw error;
+		}
+	}
 
     markWords(html, words) {
         try {
-            if (!words.length) return html;
-            
-            console.log(`${this.APP_NAME} Pradedamas žodžių žymėjimas`);
-            
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = html;
-            
-            const sortedWords = [...words].sort((a, b) => b.start - a.start);
-            
-            const walkNodes = (node) => {
-                if (node.nodeType === Node.TEXT_NODE) {
-                    let text = node.textContent;
-                    let hasChanges = false;
-                    let markedText = text;
-
-                    sortedWords.forEach(word => {
-                        if (word.start !== undefined && word.end !== undefined) {
-                            const originalWord = word.text;
-                            markedText = markedText.slice(0, word.start) + 
-                                    `<span class="word">${originalWord}</span>` + 
-                                    markedText.slice(word.end);
-                            hasChanges = true;
-                        }
-                    });
-
-                    if (hasChanges) {
-                        const span = document.createElement('span');
-                        span.innerHTML = markedText;
-                        node.parentNode.replaceChild(span, node);
-                    }
-                } else if (node.nodeType === Node.ELEMENT_NODE) {
-                    Array.from(node.childNodes).forEach(walkNodes);
-                }
-            };
-            
-            walkNodes(tempDiv);
-            
+			if (!words.length) return html;
+			console.log(`${this.APP_NAME} Pradedamas žodžių žymėjimas`);
+			
+			// Sukuriame laikiną stringą
+			let markedText = html;
+			const sortedWords = [...words].sort((a, b) => b.start - a.start);
+			
+			// Tiesiogiai keičiame tekstą
+			sortedWords.forEach(word => {
+				if (word.start !== undefined && word.end !== undefined) {
+					markedText = markedText.slice(0, word.start) + 
+							`<span class="word">${word.text}</span>` + 
+							markedText.slice(word.end);
+				}
+			});
+        
+			// Išvalome HTML su DOMPurify
             const markedHtml = DOMPurify.sanitize(tempDiv.innerHTML, {
                 ALLOWED_TAGS: this.ALLOWED_TAGS,
                 ALLOWED_CLASSES: this.ALLOWED_CLASSES,
