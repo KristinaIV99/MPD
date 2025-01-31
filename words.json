@@ -11,6 +11,7 @@
         "kalbos dalis": "pron",
         "vertimas": "yra",
         "bazinė forma": "är",
+        "bazė vertimas": "aš",     
         "CERF": "A1",
         "base_word": "är"
     },
@@ -18,6 +19,7 @@
         "kalbos dalis": "pron",
         "vertimas": "yra",
         "bazinė forma": "ett",
+        "bazė vertimas": "aš",
         "CERF": "A1",
         "base_word": "ett"
     },
@@ -25,6 +27,7 @@
         "kalbos dalis": "subst",
         "vertimas": "perkūnija",
         "bazinė forma": "på",
+        "bazė vertimas": "aš",
         "CERF": "A1",
         "base_word": "på"
     },
@@ -32,6 +35,7 @@
         "kalbos dalis": "pron",
         "vertimas": "yra",
         "bazinė forma": "de",
+        "bazė vertimas": "aš",
         "CERF": "A1",
         "base_word": "de"
     },
@@ -39,6 +43,7 @@
         "kalbos dalis": "pron",
         "vertimas": "ji",
         "bazinė forma": "hon",
+        "bazė vertimas": "aš",
         "CERF": "A1",
         "base_word": "hon"
     },
@@ -46,6 +51,7 @@
         "kalbos dalis": "pron",
         "vertimas": "ji",
         "bazinė forma": "för",
+        "bazė vertimas": "aš",
         "CERF": "A1",
         "base_word": "för"
     },
@@ -83,8 +89,8 @@
     },
     "går_verb": {
         "kalbos dalis": "verb",
-        "vertimas": "eiti",
-        "bazinė forma": "går",
+        "vertimas": "-",
+        "bazinė forma": "gå",
         "bazė vertimas": "går",
         "CERF": "A1",
         "base_word": "går"
@@ -131,9 +137,9 @@
     },
     "öra_subst": {
         "kalbos dalis": "subst",
-        "vertimas": "ausis",
-        "bazinė forma": "öra",
-        "bazė vertimas": "öra",
+        "vertimas": "-",
+        "bazinė forma": "ör",
+        "bazė vertimas": "ausis",
         "CERF": "A1",
         "base_word": "öra"
     },
@@ -141,7 +147,7 @@
         "kalbos dalis": "subst",
         "vertimas": "metai",
         "bazinė forma": "år",
-        "bazė vertimas": "år",
+        "bazė vertimas": "matai",
         "CERF": "A1",
         "base_word": "år"
     }
