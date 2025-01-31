@@ -48,11 +48,17 @@ export class HtmlConverter {
 
   markPhrases(html, phrases) {
     try {
-      // 1. Sukuriame automatoną
       const ac = new AhoCorasick();
-      phrases.forEach(phrase => {
-        console.log("Pridedama frazė:", phrase.text);
-        ac.addPattern(phrase.text.toLowerCase(), 'phrase');
+      
+      // Pašaliname dublikatus
+      const uniquePhrases = Array.from(new Set(phrases.map(p => p.text)))
+          .map(text => ({
+              text: text,
+              type: 'phrase'
+          }));
+          
+      uniquePhrases.forEach(phrase => {
+          ac.addPattern(phrase.text.toLowerCase(), 'phrase');
       });
       ac.buildFailureLinks();
 
