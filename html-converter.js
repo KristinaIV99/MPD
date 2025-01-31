@@ -29,7 +29,7 @@ export class HtmlConverter {
         ];
         
         // Pridedame ALLOWED_CLASSES klasių sąrašą
-        this.ALLOWED_CLASSES = ['dialog', 'triple-space', 'after-hr', 'phrases' 'word', 'homonym'];
+        this.ALLOWED_CLASSES = ['dialog', 'triple-space', 'after-hr', 'phrases', 'word', 'homonym'];
         
         console.log(`${this.APP_NAME} Konstruktorius inicializuotas`);
     }
