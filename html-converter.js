@@ -13,7 +13,7 @@ export class HtmlConverter {
             mangle: false,
             sanitize: false,
             smartLists: true,
-            smartypants: false, // Išjungiame, kad nekonvertuotų brūkšnių
+            smartypants: false,
             pedantic: false
         });
         
@@ -36,33 +36,34 @@ export class HtmlConverter {
             console.log(`${this.APP_NAME} Pradedama konversija į HTML`);
             console.log('Gautas tekstas:', text);
 
-            // Pirmiausia pakeičiame dialogų brūkšnius į saugų HTML kodą
-            let processed = text.replace(/–/g, '&ndash;');
+            // Išsaugome dialogus (pakeičiame į specialų žymėjimą)
+            let processed = text.replace(/^[-–]\s(.+)$/gm, '###DIALOG###$1');
             console.log('Po dialogų brūkšnių:', processed);
-            
-            // Pakeičiame sekcijų skirtukus į HTML paragrafus su tarpais
-            processed = processed.replace(/§SECTION_BREAK§/g, '</p><p><br><br></p><p>');
-            console.log('Po sekcijų skirtukų:', processed);
             
             // Horizontalią liniją keičiame į HR
             processed = processed.replace(/^—$/gm, '<hr>');
-
+            
             // Konvertuojame į HTML
             let html = marked(processed);
             console.log('Po marked konversijos:', html);
             
+            // Grąžiname dialogus
+            html = html.replace(/<p>###DIALOG###(.+?)<\/p>/g, '<p class="dialog">– $1</p>');
+            console.log('Po dialogų grąžinimo:', html);
+            
+            // Tvarkome trigubas eilutes
+            html = html.replace(/§SECTION_BREAK§/g, '</p><div class="triple-space"></div><p>');
+            console.log('Po sekcijų skirtukų:', processed);
+            
+
             // Išvalome HTML
             html = DOMPurify.sanitize(html, {
                 ALLOWED_TAGS: this.ALLOWED_TAGS,
+                ALLOWED_CLASSES: ['dialog', 'triple-space'],
                 KEEP_CONTENT: true,
                 ALLOW_DATA_ATTR: false,
-                ADD_ATTR: ['style'] // Leidžiame style atributą
             });
             console.log('Po DOMPurify:', html);
-
-            // Apsaugome, kad neprarastume tarpų
-            html = html.replace(/<p><br>/g, '<p style="margin-bottom: 2em;">');
-            html = html.replace(/<br><br>/g, '<br style="margin-bottom: 1em;"><br style="margin-bottom: 1em;">');
 
             console.log(`${this.APP_NAME} HTML konversija baigta`);
             return html;
