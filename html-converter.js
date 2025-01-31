@@ -111,7 +111,7 @@ export class HtmlConverter {
     }
   }
 
-removeOverlaps(matches) {
+  removeOverlaps(matches) {
     if (matches.length <= 1) return matches;
     
     // Rūšiuojame pagal pradžios poziciją
@@ -128,5 +128,9 @@ removeOverlaps(matches) {
     }
     
     return result;
+  }
+
+  spliceString(str, start, deleteCount, insert) {
+    return str.slice(0, start) + insert + str.slice(start + deleteCount);
   }
 }
