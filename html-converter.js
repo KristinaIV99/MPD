@@ -92,64 +92,55 @@ export class HtmlConverter {
 			tempDiv.innerHTML = html;
 			console.log('Sukurtas laikinas DIV:', tempDiv.innerHTML);
 			
-			// Einame per tekstinius mazgus ir žymime frazes
+			// Rūšiuojame frazes nuo ilgiausios iki trumpiausios
+			const sortedPhrases = [...phrases].sort((a, b) => b.text.length - a.text.length);
+			console.log('Surūšiuotos frazės:', sortedPhrases);
+			
+			// Einame per tekstinius mazgus
 			const walkNodes = (node) => {
 				if (node.nodeType === Node.TEXT_NODE) {
-					const text = node.textContent;
-					console.log('Tikrinamas tekstinis mazgas:', text);
-					
-					const relevantPhrases = phrases.filter(phrase => {
-						const includes = text.includes(phrase.text);
-						console.log(`Tikrinama frazė "${phrase.text}" tekste:`, includes);
-						return includes;
+					let text = node.textContent;
+					console.log('Tikrinamas tekstas:', text);
+
+					// Tikriname ar tekstas turi frazių
+					let hasChanges = false;
+					let markedText = text;
+
+					sortedPhrases.forEach(phrase => {
+						// Ieškome frazės tekste
+						const index = markedText.indexOf(phrase.text);
+						if (index !== -1) {
+							console.log(`Rasta frazė "${phrase.text}" pozicijoje ${index}`);
+							// Pakeičiame tik pirmą rastą frazę
+							markedText = markedText.replace(
+								phrase.text,
+								`<span class="phrases">${phrase.text}</span>`
+							);
+							hasChanges = true;
+						}
 					});
-					
-					console.log('Rastos aktualios frazės:', relevantPhrases);
-					
-					if (relevantPhrases.length > 0) {
+
+					// Jei buvo pakeitimų, atnaujiname mazgą
+					if (hasChanges) {
 						const span = document.createElement('span');
-						let currentPos = 0;
-						let result = '';
-						
-						relevantPhrases.forEach(phrase => {
-							const startPos = text.indexOf(phrase.text);
-							console.log(`Frazės "${phrase.text}" pozicija:`, startPos);
-							
-							if (startPos !== -1) {
-								result += text.substring(currentPos, startPos);
-								result += `<span class="phrases">${phrase.text}</span>`;
-								console.log('Tarpinis rezultatas:', result);
-								currentPos = startPos + phrase.text.length;
-							}
-						});
-						
-						result += text.substring(currentPos);
-						console.log('Galutinis rezultatas prieš įterpimą:', result);
-						
-						span.innerHTML = result;
+						span.innerHTML = markedText;
 						node.parentNode.replaceChild(span, node);
-						console.log('Pakeistas DOM mazgas:', span.outerHTML);
 					}
 				} else if (node.nodeType === Node.ELEMENT_NODE) {
-					console.log('Pradedamas elemento mazgo apdorojimas:', node.outerHTML);
 					Array.from(node.childNodes).forEach(walkNodes);
 				}
 			};
 			
 			walkNodes(tempDiv);
-			console.log('Baigtas DOM medžio apdorojimas');
 			
 			// Išvalome HTML su DOMPurify
-			console.log('HTML prieš DOMPurify:', tempDiv.innerHTML);
 			const markedHtml = DOMPurify.sanitize(tempDiv.innerHTML, {
 				ALLOWED_TAGS: this.ALLOWED_TAGS,
 				ALLOWED_CLASSES: this.ALLOWED_CLASSES,
 				KEEP_CONTENT: true,
 				ALLOW_DATA_ATTR: false,
 			});
-			console.log('HTML po DOMPurify:', markedHtml);
 			
-			console.log(`${this.APP_NAME} Frazių žymėjimas baigtas`);
 			return markedHtml;
 			
 		} catch (error) {
