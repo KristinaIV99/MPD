@@ -134,7 +134,7 @@ p {
 }
 
 .triple-space {
-    height: 3em;
+    height: calc(3em * 0.7);
     clear: both;
 }
 
