@@ -87,23 +87,72 @@ export class HtmlConverter {
     const text = node.textContent;
     let matches = ac.search(text);
     
-    // Pašaliname persidengimus
-    matches = this.removeOverlaps(matches);
-    
-    // Rūšiuojame nuo galo, kad indeksai nesusimaišytų
-    matches.sort((a, b) => b.start - a.start);
-    
+    // Pirmiausia surūšiuojame pagal ilgį (ilgiausios pirma)
+    // ir tada pagal pradžios poziciją
+    matches.sort((a, b) => {
+        if (a.pattern.length === b.pattern.length) {
+            return a.start - b.start;
+        }
+        return b.pattern.length - a.pattern.length;
+    });
+
+    // Filtruojame sutapimus pagal taisykles
+    let validMatches = [];
+    for (let i = 0; i < matches.length; i++) {
+        const current = matches[i];
+        let isValid = true;
+
+        // Tikriname ar ši frazė nesikerta su jau priimtomis frazėmis
+        for (let j = 0; j < validMatches.length; j++) {
+            const existing = validMatches[j];
+
+            // Tikriname persidengimo atvejus
+            const hasOverlap = (
+                (current.start >= existing.start && current.start < existing.end) ||
+                (current.end > existing.start && current.end <= existing.end) ||
+                (current.start <= existing.start && current.end >= existing.end)
+            );
+
+            // Jei yra persidengimas, tikriname specialius atvejus
+            if (hasOverlap) {
+                // Leidžiame mažesnei frazei būti didesnėje
+                const isSubstring = (
+                    current.start >= existing.start &&
+                    current.end <= existing.end
+                );
+
+                // Leidžiame frazių galams/pradžioms sutapti
+                const isEndToStart = current.start === existing.end;
+                const isStartToEnd = current.end === existing.start;
+
+                // Jei nėra leistinų atvejų, frazė negalioja
+                if (!isSubstring && !isEndToStart && !isStartToEnd) {
+                    isValid = false;
+                    break;
+                }
+            }
+        }
+
+        if (isValid) {
+            validMatches.push(current);
+        }
+    }
+
+    // Rūšiuojame galutinius matches nuo galo, kad nepažeisti indeksų
+    validMatches.sort((a, b) => b.start - a.start);
+
+    // Įterpiame span elementus
     let newContent = text;
-    matches.forEach(match => {
+    validMatches.forEach(match => {
         const original = text.slice(match.start, match.end);
         newContent = this.spliceString(
-            newContent, 
-            match.start, 
-            match.end - match.start, 
+            newContent,
+            match.start,
+            match.end - match.start,
             `<span class="phrases">${original}</span>`
         );
     });
-    
+
     if (newContent !== text) {
         const wrapper = document.createElement('span');
         wrapper.innerHTML = newContent;
