@@ -41,7 +41,7 @@ export class HtmlConverter {
             console.log('Po trigubų eilučių išsaugojimo:', processed);
             
             // Išsaugome dialogus (pakeičiame į specialų žymėjimą)
-            let processed = text.replace(/^[-–]\s(.+)$/gm, '###DIALOG###$1');
+            processed = text.replace(/^[-–]\s(.+)$/gm, '###DIALOG###$1');
             console.log('Po dialogų brūkšnių:', processed);
             
             // Horizontalią liniją keičiame į HR
