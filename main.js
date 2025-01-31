@@ -3,6 +3,7 @@ import { WordCounter } from './word-counter.js';
 import { PhraseReader } from './phrase-reader.js';
 import { WordReader } from './word-reader.js';
 import { UnknownWordsExporter } from './unknown-words-exporter.js';
+import { AhoCorasick } from './aho-corasick.js';
 import { HtmlConverter } from './html-converter.js';
 
 class App {
