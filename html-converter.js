@@ -153,19 +153,22 @@ export class HtmlConverter {
 		}
 	}
 
-    markWords(html, words) {
+    markWords(html, words, limit = 100) {
         try {
-            console.log(`${this.APP_NAME} Pradedamas žodžių žymėjimas`);
-            console.log('Gauti žodžiai:', words);
-            
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = html;
-            
-            // Rūšiuojame žodžius pagal ilgį (ilgesni eina pirma)
-            const sortedWords = [...words].sort((a, b) => b.text.length - a.text.length);
-            console.log('Surūšiuoti žodžiai:', sortedWords);
-            
-            const walkNodes = (node) => {
+			console.log(`${this.APP_NAME} Pradedamas žodžių žymėjimas`);
+			console.log('Visi žodžiai:', words.length);
+			
+			// Apribojame žodžių kiekį
+			const limitedWords = words.slice(0, limit);
+			console.log(`${this.APP_NAME} Žymimi pirmieji ${limit} žodžių`);
+			
+			const tempDiv = document.createElement('div');
+			tempDiv.innerHTML = html;
+			
+			// Rūšiuojame žodžius nuo ilgiausio iki trumpiausio
+			const sortedWords = [...limitedWords].sort((a, b) => b.text.length - a.text.length);
+			
+			const walkNodes = (node) => {
                 if (node.nodeType === Node.TEXT_NODE) {
                     let text = node.textContent;
                     let hasChanges = false;
@@ -222,7 +225,7 @@ export class HtmlConverter {
                 ALLOW_DATA_ATTR: true,  // Leidžiame data atributus
             });
             
-            console.log(`${this.APP_NAME} Žodžių žymėjimas baigtas`);
+            console.log(`${this.APP_NAME} Žodžių žymėjimas baigtas. Pažymėta: ${limitedWords.length}`);
             return markedHtml;
             
         } catch (error) {
