@@ -222,4 +222,33 @@ export class HtmlConverter {
 			throw error;
 		}
 	}
+
+	async mark(html, phrases = [], words = []) {
+		try {
+			console.log(`${this.APP_NAME} Pradedamas teksto žymėjimas`);
+			
+			let markedText = html;
+			
+			// Jei yra frazių, pažymime jas
+			if (phrases.length > 0) {
+				console.log(`${this.APP_NAME} Pradedamas frazių žymėjimas`);
+				markedText = this.markPhrases(markedText, phrases);
+				console.log(`${this.APP_NAME} Frazių žymėjimas baigtas`);
+			}
+			
+			// Jei yra žodžių, pažymime juos
+			if (words.length > 0) {
+				console.log(`${this.APP_NAME} Pradedamas žodžių žymėjimas`);
+				markedText = this.markWords(markedText, words);
+				console.log(`${this.APP_NAME} Žodžių žymėjimas baigtas`);
+			}
+			
+			console.log(`${this.APP_NAME} Teksto žymėjimas baigtas`);
+			return markedText;
+			
+		} catch (error) {
+			console.error(`${this.APP_NAME} Klaida žymint tekstą:`, error);
+			throw error;
+		}
+	}
 }
