@@ -118,11 +118,6 @@
     margin: 1em 0;
 }
 
-.dialog::before {
-    content: "–";
-    margin-right: 0.5em;
-}
-
 .triple-space {
     height: 3em;
 }
