@@ -36,12 +36,8 @@ export class HtmlConverter {
             console.log(`${this.APP_NAME} Pradedama konversija į HTML`);
             console.log('Gautas tekstas:', text);
 
-            // Laikinai išsaugome trigubas eilutes
-            let processed = text.replace(/\n\n\n/g, '###TRIPLE_BREAK###');
-            console.log('Po trigubų eilučių išsaugojimo:', processed);
-            
             // Išsaugome dialogus (pakeičiame į specialų žymėjimą)
-            processed = text.replace(/^[-–]\s(.+)$/gm, '###DIALOG###$1');
+            let processed = text.replace(/^[-–]\s(.+)$/gm, '###DIALOG###$1');
             console.log('Po dialogų brūkšnių:', processed);
             
             // Horizontalią liniją keičiame į HR
@@ -56,8 +52,8 @@ export class HtmlConverter {
             html = html.replace(/<p>###DIALOG###(.+?)<\/p>/g, '<p class="dialog">– $1</p>');
             console.log('Po dialogų grąžinimo:', html);
             
-            // Tvarkome trigubas eilutes
-            html = html.replace(/###TRIPLE_BREAK###/g, '</p><div class="triple-space"></div><p>');
+            // Tvarkome trigubas eilutes (dabar naudojame §SECTION_BREAK§)
+            html = html.replace(/§SECTION_BREAK§/g, '</p><div class="triple-space"></div><p>');
             console.log('Po sekcijų skirtukų:', processed);
             
             // Tvarkome horizontalią liniją ir sekantį tekstą
