@@ -1,4 +1,3 @@
-
 import { marked } from './vendor/marked.esm.js';
 import DOMPurify from './vendor/purify.es.mjs';
 
@@ -28,6 +27,9 @@ export class HtmlConverter {
             'code', 'pre',
             'div', 'span'
         ];
+        
+        // Pridedame ALLOWED_CLASSES klasių sąrašą
+        this.ALLOWED_CLASSES = ['dialog', 'triple-space', 'after-hr', 'phrases'];
         
         console.log(`${this.APP_NAME} Konstruktorius inicializuotas`);
     }
@@ -64,7 +66,7 @@ export class HtmlConverter {
             // Išvalome HTML
             html = DOMPurify.sanitize(html, {
                 ALLOWED_TAGS: this.ALLOWED_TAGS,
-                ALLOWED_CLASSES: ['dialog', 'triple-space', 'after-hr'],
+                ALLOWED_CLASSES: this.ALLOWED_CLASSES,
                 KEEP_CONTENT: true,
                 ALLOW_DATA_ATTR: false,
             });
@@ -79,62 +81,61 @@ export class HtmlConverter {
         }
     }
 
-		markPhrases(html, phrases) {
-			try {
-				console.log(`${this.APP_NAME} Pradedamas frazių žymėjimas`);
-				
-				// Sukuriame laikiną DOM elementą
-				const tempDiv = document.createElement('div');
-				tempDiv.innerHTML = html;
-				
-				// Einame per tekstinius mazgus ir žymime frazes
-				const walkNodes = (node) => {
-					if (node.nodeType === Node.TEXT_NODE) {
-						const text = node.textContent;
-						const relevantPhrases = phrases.filter(phrase => 
-							text.includes(phrase.text)
-						);
-						
-						if (relevantPhrases.length > 0) {
-							const span = document.createElement('span');
-							let currentPos = 0;
-							let result = '';
-							
-							relevantPhrases.forEach(phrase => {
-								const startPos = text.indexOf(phrase.text);
-								if (startPos !== -1) {
-									result += text.substring(currentPos, startPos);
-									result += `<span class="word">${phrase.text}</span>`;
-									currentPos = startPos + phrase.text.length;
-								}
-							});
-							
-							result += text.substring(currentPos);
-							span.innerHTML = result;
-							node.parentNode.replaceChild(span, node);
-						}
-					} else if (node.nodeType === Node.ELEMENT_NODE) {
-						Array.from(node.childNodes).forEach(walkNodes);
-					}
-				};
-				
-				walkNodes(tempDiv);
-				
-				// Išvalome HTML su DOMPurify
-				const markedHtml = DOMPurify.sanitize(tempDiv.innerHTML, {
-					ALLOWED_TAGS: this.ALLOWED_TAGS,
-					ALLOWED_CLASSES: this.ALLOWED_CLASSES,
-					KEEP_CONTENT: true,
-					ALLOW_DATA_ATTR: false,
-				});
-				
-				console.log(`${this.APP_NAME} Frazių žymėjimas baigtas`);
-				return markedHtml;
-				
-			} catch (error) {
-				console.error(`${this.APP_NAME} Klaida žymint frazes:`, error);
-				throw error;
-			}
-		}
-	}
+    markPhrases(html, phrases) {
+        try {
+            console.log(`${this.APP_NAME} Pradedamas frazių žymėjimas`);
+            
+            // Sukuriame laikiną DOM elementą
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            
+            // Einame per tekstinius mazgus ir žymime frazes
+            const walkNodes = (node) => {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const text = node.textContent;
+                    const relevantPhrases = phrases.filter(phrase => 
+                        text.includes(phrase.text)
+                    );
+                    
+                    if (relevantPhrases.length > 0) {
+                        const span = document.createElement('span');
+                        let currentPos = 0;
+                        let result = '';
+                        
+                        relevantPhrases.forEach(phrase => {
+                            const startPos = text.indexOf(phrase.text);
+                            if (startPos !== -1) {
+                                result += text.substring(currentPos, startPos);
+                                result += `<span class="phrases">${phrase.text}</span>`;
+                                currentPos = startPos + phrase.text.length;
+                            }
+                        });
+                        
+                        result += text.substring(currentPos);
+                        span.innerHTML = result;
+                        node.parentNode.replaceChild(span, node);
+                    }
+                } else if (node.nodeType === Node.ELEMENT_NODE) {
+                    Array.from(node.childNodes).forEach(walkNodes);
+                }
+            };
+            
+            walkNodes(tempDiv);
+            
+            // Išvalome HTML su DOMPurify
+            const markedHtml = DOMPurify.sanitize(tempDiv.innerHTML, {
+                ALLOWED_TAGS: this.ALLOWED_TAGS,
+                ALLOWED_CLASSES: this.ALLOWED_CLASSES,
+                KEEP_CONTENT: true,
+                ALLOW_DATA_ATTR: false,
+            });
+            
+            console.log(`${this.APP_NAME} Frazių žymėjimas baigtas`);
+            return markedHtml;
+            
+        } catch (error) {
+            console.error(`${this.APP_NAME} Klaida žymint frazes:`, error);
+            throw error;
+        }
+    }
 }
