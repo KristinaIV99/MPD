@@ -98,7 +98,7 @@
 
 /* Bazinis teksto formatavimas */
 .triple-space {
-    height: 0.8em !important;
+    height: 0.3em !important;
     clear: both;
     display: block;
     margin: 0 !important;
@@ -108,7 +108,7 @@
 
 p {
     text-align: justify;
-    margin: 0.3em 0 !important;
+    margin: 0.7em 0 !important;
     -webkit-hyphens: auto;
     -ms-hyphens: auto;
     hyphens: auto;
@@ -116,7 +116,7 @@ p {
 
 .dialog {
     text-align: justify;
-    margin: 0.3em 0 !important;
+    margin: 0.2em 0 !important;
 }
 hr {
     margin: 2em 0;
@@ -127,7 +127,7 @@ hr {
 }
 
 div.triple-space {
-    height: 0.8em !important;
+    height: 0.3em !important;
     clear: both;
     display: block;
     margin: 0 !important;
