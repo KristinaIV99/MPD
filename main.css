@@ -114,14 +114,23 @@
         padding: 10px;
     }
 }
-p {
-    margin-bottom: 1em;
-}
-
-.dialog-line {
+.dialog {
     margin: 1em 0;
 }
 
-br + br {
-    margin-top: 1em;
+.dialog::before {
+    content: "–";
+    margin-right: 0.5em;
+}
+
+.triple-space {
+    height: 3em;
+}
+
+hr {
+    margin: 2em 0;
+}
+
+.after-hr {
+    margin-top: 2em;
 }
