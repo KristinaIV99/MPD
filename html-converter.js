@@ -87,8 +87,7 @@ export class HtmlConverter {
     const text = node.textContent;
     let matches = ac.search(text);
     
-    // Pirmiausia surūšiuojame pagal ilgį (ilgiausios pirma)
-    // ir tada pagal pradžios poziciją
+    // Surūšiuojame frazes pagal ilgį (ilgiausios pirma)
     matches.sort((a, b) => {
         if (a.pattern.length === b.pattern.length) {
             return a.start - b.start;
@@ -96,37 +95,30 @@ export class HtmlConverter {
         return b.pattern.length - a.pattern.length;
     });
 
-    // Filtruojame sutapimus pagal taisykles
     let validMatches = [];
-    for (let i = 0; i < matches.length; i++) {
-        const current = matches[i];
+    for (const current of matches) {
         let isValid = true;
 
-        // Tikriname ar ši frazė nesikerta su jau priimtomis frazėmis
-        for (let j = 0; j < validMatches.length; j++) {
-            const existing = validMatches[j];
-
-            // Tikriname persidengimo atvejus
-            const hasOverlap = (
-                (current.start >= existing.start && current.start < existing.end) ||
-                (current.end > existing.start && current.end <= existing.end) ||
-                (current.start <= existing.start && current.end >= existing.end)
+        for (const existing of validMatches) {
+            // Tikriname ar tai leistinas persidengimas
+            const isSmallerInLarger = (
+                current.start >= existing.start && 
+                current.end <= existing.end
+            );
+            
+            // Tikriname ar frazių galai/pradžios sutampa
+            const isEndMeetingStart = (
+                current.start === existing.end || 
+                current.end === existing.start
             );
 
-            // Jei yra persidengimas, tikriname specialius atvejus
-            if (hasOverlap) {
-                // Leidžiame mažesnei frazei būti didesnėje
-                const isSubstring = (
-                    current.start >= existing.start &&
-                    current.end <= existing.end
+            // Jei nei viena sąlyga netinka, frazė negalioja
+            if (!isSmallerInLarger && !isEndMeetingStart) {
+                const hasOverlap = (
+                    current.start < existing.end && 
+                    current.end > existing.start
                 );
-
-                // Leidžiame frazių galams/pradžioms sutapti
-                const isEndToStart = current.start === existing.end;
-                const isStartToEnd = current.end === existing.start;
-
-                // Jei nėra leistinų atvejų, frazė negalioja
-                if (!isSubstring && !isEndToStart && !isStartToEnd) {
+                if (hasOverlap) {
                     isValid = false;
                     break;
                 }
@@ -138,12 +130,11 @@ export class HtmlConverter {
         }
     }
 
-    // Rūšiuojame galutinius matches nuo galo, kad nepažeisti indeksų
+    // Žymime tekstą nuo galo
     validMatches.sort((a, b) => b.start - a.start);
-
-    // Įterpiame span elementus
     let newContent = text;
-    validMatches.forEach(match => {
+    
+    for (const match of validMatches) {
         const original = text.slice(match.start, match.end);
         newContent = this.spliceString(
             newContent,
@@ -151,7 +142,7 @@ export class HtmlConverter {
             match.end - match.start,
             `<span class="phrases">${original}</span>`
         );
-    });
+    }
 
     if (newContent !== text) {
         const wrapper = document.createElement('span');
