@@ -29,7 +29,7 @@ export class HtmlConverter {
         ];
         
         // Pridedame ALLOWED_CLASSES klasių sąrašą
-        this.ALLOWED_CLASSES = ['dialog', 'triple-space', 'after-hr', 'phrases'];
+        this.ALLOWED_CLASSES = ['dialog', 'triple-space', 'after-hr', 'phrases', 'word', 'homonym'];
         
         console.log(`${this.APP_NAME} Konstruktorius inicializuotas`);
     }
@@ -152,4 +152,82 @@ export class HtmlConverter {
 			throw error;
 		}
 	}
+
+    markWords(html, words) {
+        try {
+            console.log(`${this.APP_NAME} Pradedamas žodžių žymėjimas`);
+            console.log('Gauti žodžiai:', words);
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            
+            // Rūšiuojame žodžius pagal ilgį (ilgesni eina pirma)
+            const sortedWords = [...words].sort((a, b) => b.text.length - a.text.length);
+            console.log('Surūšiuoti žodžiai:', sortedWords);
+            
+            const walkNodes = (node) => {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    let text = node.textContent;
+                    let hasChanges = false;
+                    let markedText = text;
+                    
+                    sortedWords.forEach(word => {
+                        const textLower = markedText.toLowerCase();
+                        const wordLower = word.text.toLowerCase();
+                        
+                        const index = textLower.indexOf(wordLower);
+                        if (index !== -1) {
+                            console.log(`Rastas žodis "${word.text}" pozicijoje ${index}`);
+                            
+                            // Paimame originalų tekstą iš tos vietos
+                            const originalWord = markedText.slice(index, index + word.text.length);
+                            
+                            // Sukuriame žodžio žymėjimą su visais atributais
+                            const classes = word.isHomonym ? 'word homonym' : 'word';
+                            const attributes = [
+                                `class="${classes}"`,
+                                `data-type="${word.type || ''}"`,
+                                `data-translation="${word.translation || ''}"`,
+                                word.baseForm && `data-base-form="${word.baseForm}"`,
+                                word.baseTranslation && `data-base-translation="${word.baseTranslation}"`,
+                                word.cerf && `data-cerf="${word.cerf}"`,
+                                word.isHomonym && `data-homonyms="${word.homonymsCount}"`
+                            ].filter(Boolean).join(' ');
+                            
+                            // Pakeičiame žodį su span
+                            markedText = markedText.slice(0, index) + 
+                                       `<span ${attributes}>${originalWord}</span>` + 
+                                       markedText.slice(index + word.text.length);
+                            
+                            hasChanges = true;
+                        }
+                    });
+                    
+                    if (hasChanges) {
+                        const span = document.createElement('span');
+                        span.innerHTML = markedText;
+                        node.parentNode.replaceChild(span, node);
+                    }
+                } else if (node.nodeType === Node.ELEMENT_NODE) {
+                    Array.from(node.childNodes).forEach(walkNodes);
+                }
+            };
+            
+            walkNodes(tempDiv);
+            
+            const markedHtml = DOMPurify.sanitize(tempDiv.innerHTML, {
+                ALLOWED_TAGS: this.ALLOWED_TAGS,
+                ALLOWED_CLASSES: this.ALLOWED_CLASSES,
+                KEEP_CONTENT: true,
+                ALLOW_DATA_ATTR: true,  // Leidžiame data atributus
+            });
+            
+            console.log(`${this.APP_NAME} Žodžių žymėjimas baigtas`);
+            return markedHtml;
+            
+        } catch (error) {
+            console.error(`${this.APP_NAME} Klaida žymint žodžius:`, error);
+            throw error;
+        }
+    }
 }
