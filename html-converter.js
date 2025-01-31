@@ -93,80 +93,141 @@ export class HtmlConverter {
     }
 
     processTextNode(node, ac) {
-        const text = node.textContent;
-        if (!text.trim()) return;
+    const text = node.textContent;
+    if (!text.trim()) return;
 
-        let matches = ac.search(text);
+    let matches = ac.search(text);
+    
+    // Pašaliname dublikatus
+    matches = this.removeDuplicates(matches);
 
-        // Pašaliname dublikatus
-        matches = this.removeDuplicates(matches);
+    // Rūšiuojame pagal ilgį ir poziciją
+    matches.sort((a, b) => {
+        const lengthDiff = b.pattern.length - a.pattern.length;
+        return lengthDiff !== 0 ? lengthDiff : a.start - b.start;
+    });
 
-        // Sutvarkome matches pagal frazių ilgį
-        matches.sort((a, b) => b.pattern.length - a.pattern.length);
+    // Sukuriame medžio struktūrą su originalia validMatches logika
+    const root = {
+        start: 0,
+        end: text.length,
+        children: [],
+        isRoot: true
+    };
 
-        let processedRanges = [];
-        let validMatches = [];
+    let processedRanges = [];
+    let validMatches = [];
 
-        for (const match of matches) {
-            // Tikriname ar ši frazė yra leistina
-            let isValid = true;
+    for (const match of matches) {
+        let isValid = true;
 
-            for (const range of processedRanges) {
-                // Jei frazė yra kitos frazės dalis - leidžiame
-                if (match.start >= range.start && match.end <= range.end) {
-                    validMatches.push(match);
-                    isValid = false;
-                    break;
-                }
-                
-                // Jei frazės persidengia - neleidžiame
-                if (match.start < range.end && match.end > range.start) {
-                    isValid = false;
-                    break;
-                }
-            }
-
-            if (isValid) {
+        for (const range of processedRanges) {
+            // Jei frazė yra kitos frazės dalis - įtraukiame į validMatches
+            if (match.start >= range.start && match.end <= range.end) {
                 validMatches.push(match);
-                processedRanges.push({
-                    start: match.start,
-                    end: match.end
-                });
+                isValid = false;
+                break;
+            }
+            
+            // Jei frazės persidengia - neleidžiame
+            if (match.start < range.end && match.end > range.start) {
+                isValid = false;
+                break;
             }
         }
 
-        // Rūšiuojame nuo galo, kad indeksai nesusimaišytų
-        validMatches.sort((a, b) => b.start - a.start);
-
-        // Žymime tekstą
-        let newContent = text;
-        for (const match of validMatches) {
-            const original = text.slice(match.start, match.end);
-            newContent = this.insertSpan(newContent, match.start, match.end, original);
-        }
-
-        if (newContent !== text) {
-            const wrapper = document.createElement('span');
-            wrapper.innerHTML = newContent;
-            node.replaceWith(wrapper);
+        if (isValid) {
+            validMatches.push(match);
+            processedRanges.push({
+                start: match.start,
+                end: match.end
+            });
         }
     }
 
-    removeDuplicates(matches) {
-        return matches.filter((match, index, self) =>
-            index === self.findIndex(m =>
-                m.start === match.start &&
-                m.end === match.end &&
-                m.pattern === match.pattern
-            )
-        );
+    // Sukuriame medį iš validMatches
+    for (const match of validMatches) {
+        this.insertIntoTree(root, match, text);
     }
 
-    insertSpan(text, start, end, content) {
-        return (
-            text.slice(0, start) +
-            `<span class="phrases">${content}</span>` +
-            text.slice(end)
-        );
+    // Konvertuojame medį į HTML
+    const newContent = this.treeToHtml(root, text);
+
+    if (newContent !== text) {
+        const wrapper = document.createElement('span');
+        wrapper.innerHTML = newContent;
+        node.replaceWith(wrapper);
     }
+}
+
+insertIntoTree(node, match, text) {
+    let insertAt = node.children.length;
+
+    for (let i = 0; i < node.children.length; i++) {
+        const child = node.children[i];
+        
+        if (match.start >= child.start && match.end <= child.end) {
+            return this.insertIntoTree(child, match, text);
+        }
+        
+        if (match.end <= child.start) {
+            insertAt = i;
+            break;
+        }
+    }
+
+    node.children.splice(insertAt, 0, {
+        start: match.start,
+        end: match.end,
+        pattern: match.pattern,
+        children: []
+    });
+}
+
+treeToHtml(node, text) {
+    if (node.isRoot) {
+        let result = '';
+        let lastEnd = node.start;
+
+        for (const child of node.children) {
+            if (child.start > lastEnd) {
+                result += text.slice(lastEnd, child.start);
+            }
+            result += this.treeToHtml(child, text);
+            lastEnd = child.end;
+        }
+
+        if (lastEnd < node.end) {
+            result += text.slice(lastEnd, node.end);
+        }
+
+        return result;
+    }
+
+    let content = '';
+    let lastEnd = node.start;
+
+    for (const child of node.children) {
+        if (child.start > lastEnd) {
+            content += text.slice(lastEnd, child.start);
+        }
+        content += this.treeToHtml(child, text);
+        lastEnd = child.end;
+    }
+
+    if (lastEnd < node.end) {
+        content += text.slice(lastEnd, node.end);
+    }
+
+    return `<span class="phrases" data-pattern="${node.pattern}">${content}</span>`;
+}
+
+removeDuplicates(matches) {
+    return matches.filter((match, index, self) =>
+        index === self.findIndex(m =>
+            m.start === match.start &&
+            m.end === match.end &&
+            m.pattern === match.pattern
+        )
+    );
 }
