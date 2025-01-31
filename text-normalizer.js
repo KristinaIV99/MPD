@@ -125,9 +125,7 @@ class TextNormalizer {
     this.log('=== handleParagraphsAndSpacing START ===', text);
     
     let result = text
-      // Tvarkome paragrafus
-      // Pakeičiame sekcijų skirtukus į tuščias eilutes
-      .replace(/§SECTION_BREAK§/g, '\n\n\n')
+      // Tvarkome paragrafus - BET PALIEKAME §SECTION_BREAK§
       .replace(this.patterns.paragraphs, '$1\n\n$2')
       // Tvarkome blockquotes
       .replace(/^>\s*(.+)$/gm, '> $1\n\n')
