@@ -5,8 +5,8 @@ import { AhoCorasick } from './aho-corasick.js';
 export class HtmlConverter {
     constructor() {
         this.APP_NAME = '[HtmlConverter]';
+        this.ahoCorasick = new AhoCorasick();
         
-        // Nustatome marked opcijas
         marked.setOptions({
             breaks: true,
             gfm: true,
@@ -18,7 +18,6 @@ export class HtmlConverter {
             pedantic: false
         });
         
-        // Leidžiami HTML elementai
         this.ALLOWED_TAGS = [
             'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
             'em', 'strong',
@@ -29,159 +28,135 @@ export class HtmlConverter {
             'div', 'span'
         ];
         
-        // Pridedame ALLOWED_CLASSES klasių sąrašą
         this.ALLOWED_CLASSES = ['dialog', 'triple-space', 'after-hr', 'phrases', 'word', 'homonym'];
-        
-        console.log(`${this.APP_NAME} Konstruktorius inicializuotas`);
     }
 
     async convertToHtml(text) {
         try {
-            console.log(`${this.APP_NAME} Pradedama konversija į HTML`);
-            console.log('Gautas tekstas:', text);
+            // Pataisyti regex išraiškas
+            let processed = text
+                .replace(/^[-\u2013\u2014]\s(.+)$/gm, '###DIALOG###$1')
+                .replace(/^—+$/gm, '<hr>')
+                .replace(/§SECTION_BREAK§/g, '\n\n§SECTION_BREAK§\n\n');
 
-            // Išsaugome dialogus (pakeičiame į specialų žymėjimą)
-            let processed = text.replace(/^[-–]\s(.+)$/gm, '###DIALOG###$1');
-            console.log('Po dialogų brūkšnių:', processed);
-            
-            // Horizontalią liniją keičiame į HR
-            processed = processed.replace(/^—$/gm, '<hr>\n');
-            console.log('Po horizontalios linijos:', processed);
-            
-            // Konvertuojame į HTML
             let html = marked(processed);
-            console.log('Po marked konversijos:', html);
             
-            // Grąžiname dialogus
-            html = html.replace(/<p>###DIALOG###(.+?)<\/p>/g, '<p class="dialog">– $1</p>');
-            console.log('Po dialogų grąžinimo:', html);
-            
-            // Tvarkome trigubas eilutes (dabar naudojame §SECTION_BREAK§)
-            html = html.replace(/§SECTION_BREAK§/g, '</p><div class="triple-space"></div><p>');
-            console.log('Po sekcijų skirtukų:', processed);
-            
-            // Tvarkome horizontalią liniją ir sekantį tekstą
-            html = html.replace(/<hr>\s*<p>/g, '<hr><p class="after-hr">');
-            console.log('Po elementų grąžinimo:', html);
+            html = html
+                .replace(/<p>###DIALOG###(.+?)<\/p>/g, '<p class="dialog">– $1</p>')
+                .replace(/<hr>\s*<p>/g, '<hr><p class="after-hr">')
+                .replace(/§SECTION_BREAK§/g, '</p><div class="triple-space"></div><p>');
 
-            // Išvalome HTML
-            html = DOMPurify.sanitize(html, {
+            return DOMPurify.sanitize(html, {
                 ALLOWED_TAGS: this.ALLOWED_TAGS,
                 ALLOWED_CLASSES: this.ALLOWED_CLASSES,
-                KEEP_CONTENT: true,
-                ALLOW_DATA_ATTR: false,
+                KEEP_CONTENT: true
             });
-            console.log('Po DOMPurify:', html);
-
-            console.log(`${this.APP_NAME} HTML konversija baigta`);
-            return html;
 
         } catch (error) {
-            console.error(`${this.APP_NAME} Klaida konvertuojant į HTML:`, error);
+            console.error(`${this.APP_NAME} Klaida:`, error);
             throw error;
         }
     }
 
     markPhrases(html, phrases) {
-		try {
-			console.log(`${this.APP_NAME} Pradedamas frazių žymėjimas`);
-			console.log('Gautas HTML:', html);
-			console.log('Gautos frazės:', phrases);
-			
-			// Sukuriame laikiną DOM elementą
-			const tempDiv = document.createElement('div');
-			tempDiv.innerHTML = html;
-			console.log('Sukurtas laikinas DIV:', tempDiv.innerHTML);
-			
-			// Rūšiuojame frazes nuo ilgiausios iki trumpiausios
-			const sortedPhrases = [...phrases].sort((a, b) => b.text.length - a.text.length);
-			console.log('Surūšiuotos frazės:', sortedPhrases);
-			
-			// Einame per tekstinius mazgus
-			const walkNodes = (node) => {
-				if (node.nodeType === Node.TEXT_NODE) {
-					let text = node.textContent;
-					console.log('Tikrinamas tekstas:', text);
+        try {
+            const ac = new AhoCorasick();
+            phrases.forEach(phrase => ac.addPattern(phrase.text, phrase));
+            ac.buildFailureLinks();
 
-					// Tikriname ar tekstas turi frazių
-					let hasChanges = false;
-					let markedText = text;
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
 
-					sortedPhrases.forEach(phrase => {
-						const textLower = markedText.toLowerCase();
-						const phraseLower = phrase.text.toLowerCase();
-						
-						// Ieškome frazės tekste
-						const index = textLower.indexOf(phraseLower);
-						if (index !== -1) {
-							console.log(`Rasta frazė "${phrase.text}" pozicijoje ${index}`);
-							// Paimame originalų tekstą iš tos vietos
-							const originalPhrase = markedText.slice(index, index + phrase.text.length);
-							// Pakeičiame originalų tekstą su span
-							markedText = markedText.slice(0, index) + 
-									`<span class="phrases">${originalPhrase}</span>` + 
-									markedText.slice(index + phrase.text.length);
-							hasChanges = true;
-						}
-					});
+            this.processNode(tempDiv, ac);
+            
+            return DOMPurify.sanitize(tempDiv.innerHTML, {
+                ALLOWED_TAGS: this.ALLOWED_TAGS,
+                ALLOWED_CLASSES: this.ALLOWED_CLASSES,
+                KEEP_CONTENT: true
+            });
+        } catch (error) {
+            console.error(`${this.APP_NAME} Klaida:`, error);
+            return html;
+        }
+    }
 
-					// Jei buvo pakeitimų, atnaujiname mazgą
-					if (hasChanges) {
-						const span = document.createElement('span');
-						span.innerHTML = markedText;
-						node.parentNode.replaceChild(span, node);
-					}
-				} else if (node.nodeType === Node.ELEMENT_NODE) {
-					Array.from(node.childNodes).forEach(walkNodes);
-				}
-			};
-			
-			walkNodes(tempDiv);
-			
-			// Išvalome HTML su DOMPurify
-			const markedHtml = DOMPurify.sanitize(tempDiv.innerHTML, {
-				ALLOWED_TAGS: this.ALLOWED_TAGS,
-				ALLOWED_CLASSES: this.ALLOWED_CLASSES,
-				KEEP_CONTENT: true,
-				ALLOW_DATA_ATTR: false,
-			});
-			
-			return markedHtml;
-			
-		} catch (error) {
-			console.error(`${this.APP_NAME} Klaida žymint frazes:`, error);
-			throw error;
-		}
-	}
+    processNode(node, ac) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            this.processTextNode(node, ac);
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            Array.from(node.childNodes).forEach(child => this.processNode(child, ac));
+        }
+    }
 
-	markWords(html, words) {
-		try {
-			if (!words.length) return html;
-			console.log(`${this.APP_NAME} Pradedamas žodžių žymėjimas`);
-			
-			let markedText = html;
-			const sortedWords = [...words].sort((a, b) => b.start - a.start);
+    processTextNode(node, ac) {
+        const text = node.textContent;
+        const matches = ac.search(text)
+            .sort((a, b) => b.start - a.start);
 
-			sortedWords.forEach(word => {
-				if (word.start !== undefined && word.end !== undefined) {
-					markedText = markedText.slice(0, word.start) + 
-							`<span class="word">${word.text}</span>` + 
-							markedText.slice(word.end);
-				}
-			});
-			
-			const cleanHtml = DOMPurify.sanitize(markedText, {
-				ALLOWED_TAGS: this.ALLOWED_TAGS,
-				ALLOWED_CLASSES: this.ALLOWED_CLASSES,
-				KEEP_CONTENT: true,
-				ALLOW_DATA_ATTR: false,
-			});
-			
-			console.log(`${this.APP_NAME} Žodžių žymėjimas baigtas`);
-			return cleanHtml;
-		} catch (error) {
-			console.error(`${this.APP_NAME} Klaida žymint žodžius:`, error);
-			throw error;
-		}
-	}
+        let newContent = text;
+        matches.forEach(match => {
+            const replacement = `<span class="${match.type}">${match.pattern}</span>`;
+            newContent = this.spliceString(newContent, match.start, match.end - match.start, replacement);
+        });
+
+        if (newContent !== text) {
+            const wrapper = document.createElement('span');
+            wrapper.innerHTML = newContent;
+            node.replaceWith(wrapper);
+        }
+    }
+
+    spliceString(str, start, deleteCount, insert) {
+        return str.slice(0, start) + insert + str.slice(start + deleteCount);
+    }
+
+    markWords(html, words) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        words.sort((a, b) => b.start - a.start).forEach(word => {
+            const textNode = this.findTextNodeAtOffset(tempDiv, word.start);
+            if (textNode) {
+                this.splitAndWrap(textNode, word.start, word.end);
+            }
+        });
+        
+        return DOMPurify.sanitize(tempDiv.innerHTML, {
+            ALLOWED_TAGS: this.ALLOWED_TAGS,
+            ALLOWED_CLASSES: this.ALLOWED_CLASSES,
+            KEEP_CONTENT: true
+        });
+    }
+
+    findTextNodeAtOffset(node, targetOffset, currentOffset = { value: 0 }) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            if (currentOffset.value + node.textContent.length >= targetOffset) {
+                return node;
+            }
+            currentOffset.value += node.textContent.length;
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            for (const child of node.childNodes) {
+                const result = this.findTextNodeAtOffset(child, targetOffset, currentOffset);
+                if (result) return result;
+            }
+        }
+        return null;
+    }
+
+    splitAndWrap(textNode, start, end) {
+        const content = textNode.textContent;
+        const before = content.slice(0, start);
+        const target = content.slice(start, end);
+        const after = content.slice(end);
+
+        const wrapper = document.createElement('span');
+        wrapper.className = 'word';
+        wrapper.textContent = target;
+
+        const parent = textNode.parentNode;
+        parent.insertBefore(document.createTextNode(before), textNode);
+        parent.insertBefore(wrapper, textNode);
+        parent.insertBefore(document.createTextNode(after), textNode);
+        parent.removeChild(textNode);
+    }
 }
