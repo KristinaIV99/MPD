@@ -158,6 +158,22 @@ hr {
     text-decoration-thickness: 2px;
 }
 
+.word {
+    position: relative;
+    cursor: pointer;
+    text-decoration-line: underline;
+    text-decoration-style: dotted;  /* taškiukai kaip frazėms */
+    text-decoration-thickness: 1px;  /* taškiukų storis */
+    text-underline-offset: 2px;     /* atstumas nuo teksto */
+    color: var(--text-light);
+    transition: background-color 0.2s ease;
+}
+
+.word:hover {
+    text-decoration-thickness: 2px;  /* storesni taškiukai užvedus */
+    background-color: rgba(33, 150, 243, 0.1);
+}
+
 @media (prefers-color-scheme: dark) {
     .phrases {
         color: var(--text-dark);
@@ -165,6 +181,14 @@ hr {
     }
     
     .phrases:hover {
+        background-color: rgba(33, 150, 243, 0.2);
+    }
+
+    .word {
+        color: var(--text-dark);
+    }
+    
+    .word:hover {
         background-color: rgba(33, 150, 243, 0.2);
     }
 }
