@@ -142,6 +142,30 @@ hr {
     font-size: 14px;
 }
 
+.phrases {
+    position: relative;
+    cursor: pointer;
+    border-bottom: 1px solid var(--primary-color);
+    color: var(--text-light);
+    transition: background-color 0.2s ease;
+}
+
+.phrases:hover {
+    background-color: rgba(33, 150, 243, 0.1); /* var(--primary-color) su permatomumu */
+}
+
+/* Pridėti prie tamsios temos */
+@media (prefers-color-scheme: dark) {
+    .phrases {
+        color: var(--text-dark);
+        border-bottom-color: var(--primary-color);
+    }
+
+    .phrases:hover {
+        background-color: rgba(33, 150, 243, 0.2); /* tamsesnė versija */
+    }
+}
+
 /* ==========================================================================
    KLAIDŲ PRANEŠIMAI
    ========================================================================== */
