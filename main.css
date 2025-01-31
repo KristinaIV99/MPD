@@ -134,40 +134,21 @@ div.triple-space {
     padding: 0 !important;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px) and (prefers-color-scheme: dark) {
     .text-content {
         font-size: 16px; /* Geresnis skaitomumas mobiliuose */
         line-height: 1.5;
         padding: 12px;
-        background: #1a1a1a; /* Tamsi pilka/juoda */
-        color: #e0e0e0;     /* Šviesus tekstas */
     }
 
     .interactive-word {
         padding: 2px 0; /* Didesnis touch target */
         margin: 0 1px;
-        border-bottom-color: #666; /* Tamsesnis pabraukimas */
-    }
-
-    .interactive-word:hover {
-        background-color: #333; /* Tamsus hover */
     }
 
     .word-popup {
         max-width: 90vw; /* Ribojame plotį mobiliuose */
         font-size: 14px;
         padding: 10px;
-        background: #2d2d2d; /* Tamsus fono spalva */
-        border-color: #444;  /* Tamsus rėmelis */
-        color: #fff;        /* Baltas tekstas */
-    }
-
-    /* Tamsūs dialogai ir kiti elementai */
-    .dialog {
-        color: #e0e0e0; 
-    }
-    
-    hr {
-        border-color: #444; /* Tamsi linija */
     }
 }
