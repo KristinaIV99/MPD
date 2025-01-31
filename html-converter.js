@@ -154,13 +154,12 @@ export class HtmlConverter {
 	}
 
     markWords(html, words, limit = 100) {
-        try {
+		try {
 			console.log(`${this.APP_NAME} Pradedamas žodžių žymėjimas`);
-			console.log('Visi žodžiai:', words.length);
 			
-			// Apribojame žodžių kiekį
+			// Sukuriame žodžių žemėlapį pagal pozicijas
+			const wordPositions = new Set(); // Saugosime jau pažymėtų žodžių pozicijas
 			const limitedWords = words.slice(0, limit);
-			console.log(`${this.APP_NAME} Žymimi pirmieji ${limit} žodžių`);
 			
 			const tempDiv = document.createElement('div');
 			tempDiv.innerHTML = html;
@@ -169,68 +168,75 @@ export class HtmlConverter {
 			const sortedWords = [...limitedWords].sort((a, b) => b.text.length - a.text.length);
 			
 			const walkNodes = (node) => {
-                if (node.nodeType === Node.TEXT_NODE) {
-                    let text = node.textContent;
-                    let hasChanges = false;
-                    let markedText = text;
-                    
-                    sortedWords.forEach(word => {
-                        const textLower = markedText.toLowerCase();
-                        const wordLower = word.text.toLowerCase();
-                        
-                        const index = textLower.indexOf(wordLower);
-                        if (index !== -1) {
-                            console.log(`Rastas žodis "${word.text}" pozicijoje ${index}`);
-                            
-                            // Paimame originalų tekstą iš tos vietos
-                            const originalWord = markedText.slice(index, index + word.text.length);
-                            
-                            // Sukuriame žodžio žymėjimą su visais atributais
-                            const classes = word.isHomonym ? 'word homonym' : 'word';
-                            const attributes = [
-                                `class="${classes}"`,
-                                `data-type="${word.type || ''}"`,
-                                `data-translation="${word.translation || ''}"`,
-                                word.baseForm && `data-base-form="${word.baseForm}"`,
-                                word.baseTranslation && `data-base-translation="${word.baseTranslation}"`,
-                                word.cerf && `data-cerf="${word.cerf}"`,
-                                word.isHomonym && `data-homonyms="${word.homonymsCount}"`
-                            ].filter(Boolean).join(' ');
-                            
-                            // Pakeičiame žodį su span
-                            markedText = markedText.slice(0, index) + 
-                                       `<span ${attributes}>${originalWord}</span>` + 
-                                       markedText.slice(index + word.text.length);
-                            
-                            hasChanges = true;
-                        }
-                    });
-                    
-                    if (hasChanges) {
-                        const span = document.createElement('span');
-                        span.innerHTML = markedText;
-                        node.parentNode.replaceChild(span, node);
-                    }
-                } else if (node.nodeType === Node.ELEMENT_NODE) {
-                    Array.from(node.childNodes).forEach(walkNodes);
-                }
-            };
-            
-            walkNodes(tempDiv);
-            
-            const markedHtml = DOMPurify.sanitize(tempDiv.innerHTML, {
-                ALLOWED_TAGS: this.ALLOWED_TAGS,
-                ALLOWED_CLASSES: this.ALLOWED_CLASSES,
-                KEEP_CONTENT: true,
-                ALLOW_DATA_ATTR: true,  // Leidžiame data atributus
-            });
-            
-            console.log(`${this.APP_NAME} Žodžių žymėjimas baigtas. Pažymėta: ${limitedWords.length}`);
-            return markedHtml;
-            
-        } catch (error) {
-            console.error(`${this.APP_NAME} Klaida žymint žodžius:`, error);
-            throw error;
-        }
-    }
+				if (node.nodeType === Node.TEXT_NODE) {
+					let text = node.textContent;
+					let hasChanges = false;
+					let markedText = text;
+					let offset = 0; // Sekame pozicijos pasikeitimus
+					
+					sortedWords.forEach(word => {
+						const textLower = markedText.toLowerCase();
+						const wordLower = word.text.toLowerCase();
+						
+						let index = textLower.indexOf(wordLower);
+						// Tikriname ar žodis dar nebuvo pažymėtas
+						while (index !== -1) {
+							const globalStart = offset + index;
+							const globalEnd = globalStart + word.text.length;
+							const positionKey = `${globalStart}-${globalEnd}`;
+							
+							if (!wordPositions.has(positionKey)) {
+								console.log(`Rastas žodis "${word.text}" pozicijoje ${index}`);
+								
+								const originalWord = markedText.slice(index, index + word.text.length);
+								const classes = word.isHomonym ? 'word homonym' : 'word';
+								const attributes = [
+									`class="${classes}"`,
+									`data-type="${word.type || ''}"`,
+									`data-translation="${word.translation || ''}"`,
+									word.baseForm && `data-base-form="${word.baseForm}"`,
+									word.baseTranslation && `data-base-translation="${word.baseTranslation}"`,
+									word.cerf && `data-cerf="${word.CERF}"`,
+									word.isHomonym && `data-homonyms="${word.homonymsCount}"`
+								].filter(Boolean).join(' ');
+								
+								const replacement = `<span ${attributes}>${originalWord}</span>`;
+								markedText = markedText.slice(0, index) + replacement + markedText.slice(index + word.text.length);
+								
+								offset += replacement.length - word.text.length;
+								wordPositions.add(positionKey);
+								hasChanges = true;
+								break; // Pažymime tik pirmą radimą
+							}
+							index = textLower.indexOf(wordLower, index + 1);
+						}
+					});
+					
+					if (hasChanges) {
+						const span = document.createElement('span');
+						span.innerHTML = markedText;
+						node.parentNode.replaceChild(span, node);
+					}
+				} else if (node.nodeType === Node.ELEMENT_NODE) {
+					Array.from(node.childNodes).forEach(walkNodes);
+				}
+			};
+			
+			walkNodes(tempDiv);
+			
+			const markedHtml = DOMPurify.sanitize(tempDiv.innerHTML, {
+				ALLOWED_TAGS: this.ALLOWED_TAGS,
+				ALLOWED_CLASSES: this.ALLOWED_CLASSES,
+				KEEP_CONTENT: true,
+				ALLOW_DATA_ATTR: true
+			});
+			
+			console.log(`${this.APP_NAME} Žodžių žymėjimas baigtas`);
+			return markedHtml;
+			
+		} catch (error) {
+			console.error(`${this.APP_NAME} Klaida žymint žodžius:`, error);
+			throw error;
+		}
+	}
 }
