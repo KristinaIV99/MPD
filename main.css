@@ -98,17 +98,16 @@
 
 /* Bazinis teksto formatavimas */
 .triple-space {
-    height: 0.3em !important;
+    height: 0.5em !important;
     clear: both;
     display: block;
     margin: 0 !important;
     padding: 0 !important;
-    border: 1px solid red;
 }
 
 p {
     text-align: justify;
-    margin: 0.7em 0 !important;
+    margin: 0.9em 0 !important;
     -webkit-hyphens: auto;
     -ms-hyphens: auto;
     hyphens: auto;
@@ -116,7 +115,7 @@ p {
 
 .dialog {
     text-align: justify;
-    margin: 0.2em 0 !important;
+    margin: 0.1em 0 !important;
 }
 hr {
     margin: 2em 0;
@@ -127,12 +126,11 @@ hr {
 }
 
 div.triple-space {
-    height: 0.3em !important;
+    height: 0.5em !important;
     clear: both;
     display: block;
     margin: 0 !important;
     padding: 0 !important;
-    background-color: red; /* Laikinas - kad matytume ar stilius veikia */
 }
 
 @media (max-width: 768px) {
