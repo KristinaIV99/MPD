@@ -83,7 +83,3 @@ class AhoCorasick {
 
 export { AhoCorasick };
 
-// html-converter.js importas:
-import { marked } from './vendor/marked.esm.js';
-import DOMPurify from './vendor/purify.es.mjs';
-import { AhoCorasick } from './aho-corasick.js';
