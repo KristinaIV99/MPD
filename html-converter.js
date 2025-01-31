@@ -117,11 +117,9 @@ export class HtmlConverter {
 			if (!words.length) return html;
 			console.log(`${this.APP_NAME} Pradedamas žodžių žymėjimas`);
 			
-			// Sukuriame laikiną stringą
 			let markedText = html;
 			const sortedWords = [...words].sort((a, b) => b.start - a.start);
 			
-			// Tiesiogiai keičiame tekstą
 			sortedWords.forEach(word => {
 				if (word.start !== undefined && word.end !== undefined) {
 					markedText = markedText.slice(0, word.start) + 
@@ -129,23 +127,21 @@ export class HtmlConverter {
 							markedText.slice(word.end);
 				}
 			});
-        
-			// Išvalome HTML su DOMPurify
-            const markedHtml = DOMPurify.sanitize(tempDiv.innerHTML, {
-                ALLOWED_TAGS: this.ALLOWED_TAGS,
-                ALLOWED_CLASSES: this.ALLOWED_CLASSES,
-                KEEP_CONTENT: true,
-                ALLOW_DATA_ATTR: false,
-            });
-            
-            console.log(`${this.APP_NAME} Žodžių žymėjimas baigtas`);
-            return markedHtml;
-            
-        } catch (error) {
-            console.error(`${this.APP_NAME} Klaida žymint žodžius:`, error);
-            throw error;
-        }
-    }
+			
+			const cleanHtml = DOMPurify.sanitize(markedText, {
+				ALLOWED_TAGS: this.ALLOWED_TAGS,
+				ALLOWED_CLASSES: this.ALLOWED_CLASSES,
+				KEEP_CONTENT: true,
+				ALLOW_DATA_ATTR: false,
+			});
+			
+			console.log(`${this.APP_NAME} Žodžių žymėjimas baigtas`);
+			return cleanHtml;
+		} catch (error) {
+			console.error(`${this.APP_NAME} Klaida žymint žodžius:`, error);
+			throw error;
+		}
+	}
 
     async mark(html, phrases = [], words = []) {
         try {
