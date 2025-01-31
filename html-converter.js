@@ -88,135 +88,121 @@ export class HtmlConverter {
     }
 
     processTextNode(node, ac) {
-        const text = node.textContent;
-        if (!text.trim()) return;
+		const text = node.textContent;
+		if (!text.trim()) return;
 
-        let matches = ac.search(text);
+		let matches = ac.search(text);
+		
+		// Pašaliname tikrus dublikatus (identiškas pozicijas)
+		matches = this.removeDuplicates(matches);
+
+		// Rūšiuojame pagal ilgį (ilgiausios frazės pirma) ir poziciją
+		matches.sort((a, b) => {
+			const lengthDiff = b.pattern.length - a.pattern.length;
+			return lengthDiff !== 0 ? lengthDiff : a.start - b.start;
+		});
+
+		let processedRanges = [];
+		let validMatches = [];
+
+		for (const match of matches) {
+			// Patikriname ar ši frazė nepersikerta su jau apdorotomis
+			let canBeProcessed = true;
+
+			for (const range of processedRanges) {
+				// Jei frazė pilnai telpa į kitą - pridedame ją kaip sub-frazę
+				if (match.start >= range.start && match.end <= range.end) {
+					validMatches.push({
+						...match,
+						isSubPhrase: true,
+						parentStart: range.start,
+						parentEnd: range.end
+					});
+					canBeProcessed = false;
+					break;
+				}
+				
+				// Jei frazės persidengia - ignoruojame trumpesnę
+				if (match.start < range.end && match.end > range.start) {
+					canBeProcessed = false;
+					break;
+				}
+			}
+
+			if (canBeProcessed) {
+				validMatches.push({...match, isSubPhrase: false});
+				processedRanges.push({
+					start: match.start,
+					end: match.end
+				});
+			}
+		}
+
+		// Rūšiuojame validMatches pagal poziciją ir ilgį
+		validMatches.sort((a, b) => {
+			const posDiff = a.start - b.start;
+			return posDiff !== 0 ? posDiff : b.pattern.length - a.pattern.length;
+		});
+
+		// Kuriame HTML rezultatą
+		let result = '';
+		let lastPos = 0;
+		let openTags = [];
+
+		for (let i = 0; i < validMatches.length; i++) {
+			const match = validMatches[i];
         
-        matches = this.removeDuplicates(matches);
+			// Pridedame tekstą prieš frazę
+			if (match.start > lastPos) {
+				result += text.slice(lastPos, match.start);
+			}
 
-        matches.sort((a, b) => {
-            const lengthDiff = b.pattern.length - a.pattern.length;
-            return lengthDiff !== 0 ? lengthDiff : a.start - b.start;
-        });
+			// Uždarome ankstesnius tagus jei reikia
+			while (openTags.length > 0 && openTags[openTags.length - 1].end <= match.start) {
+				result += '</span>';
+				openTags.pop();
+			}
 
-        const root = {
-            start: 0,
-            end: text.length,
-            children: [],
-            isRoot: true
-        };
+			// Atidarome naują tagą
+			result += `<span class="phrases" data-pattern="${match.pattern}">`;
+			openTags.push(match);
 
-        let processedRanges = [];
-        let validMatches = [];
+			if (i === validMatches.length - 1 || validMatches[i + 1].start > match.end) {
+				// Pridedame frazės tekstą
+				result += text.slice(match.start, match.end);
+				lastPos = match.end;
 
-        for (const match of matches) {
-            let isValid = true;
+				// Uždarome tagą
+				result += '</span>';
+				openTags.pop();
+			}
+		}
 
-            for (const range of processedRanges) {
-                if (match.start >= range.start && match.end <= range.end) {
-                    validMatches.push(match);
-                    isValid = false;
-                    break;
-                }
-                
-                if (match.start < range.end && match.end > range.start) {
-                    isValid = false;
-                    break;
-                }
-            }
+		// Pridedame likusį tekstą
+		if (lastPos < text.length) {
+			result += text.slice(lastPos);
+		}
 
-            if (isValid) {
-                validMatches.push(match);
-                processedRanges.push({
-                    start: match.start,
-                    end: match.end
-                });
-            }
-        }
+		// Uždarome likusius tagus
+		while (openTags.length > 0) {
+			result += '</span>';
+			openTags.pop();
+		}
 
-        for (const match of validMatches) {
-            this.insertIntoTree(root, match, text);
-        }
+		if (result !== text) {
+			const wrapper = document.createElement('span');
+			wrapper.innerHTML = result;
+			node.replaceWith(wrapper);
+		}
+	}
 
-        const newContent = this.treeToHtml(root, text);
-
-        if (newContent !== text) {
-            const wrapper = document.createElement('span');
-            wrapper.innerHTML = newContent;
-            node.replaceWith(wrapper);
-        }
-    }
-
-    insertIntoTree(node, match, text) {
-        let insertAt = node.children.length;
-
-        for (let i = 0; i < node.children.length; i++) {
-            const child = node.children[i];
-            
-            if (match.start >= child.start && match.end <= child.end) {
-                return this.insertIntoTree(child, match, text);
-            }
-            
-            if (match.end <= child.start) {
-                insertAt = i;
-                break;
-            }
-        }
-
-        node.children.splice(insertAt, 0, {
-            start: match.start,
-            end: match.end,
-            pattern: match.pattern,
-            children: []
-        });
-    }
-
-    treeToHtml(node, text) {
-        if (node.isRoot) {
-            let result = '';
-            let lastEnd = node.start;
-
-            for (const child of node.children) {
-                if (child.start > lastEnd) {
-                    result += text.slice(lastEnd, child.start);
-                }
-                result += this.treeToHtml(child, text);
-                lastEnd = child.end;
-            }
-
-            if (lastEnd < node.end) {
-                result += text.slice(lastEnd, node.end);
-            }
-
-            return result;
-        }
-
-        let content = '';
-        let lastEnd = node.start;
-
-        for (const child of node.children) {
-            if (child.start > lastEnd) {
-                content += text.slice(lastEnd, child.start);
-            }
-            content += this.treeToHtml(child, text);
-            lastEnd = child.end;
-        }
-
-        if (lastEnd < node.end) {
-            content += text.slice(lastEnd, node.end);
-        }
-
-        return `<span class="phrases" data-pattern="${node.pattern}">${content}</span>`;
-    }
-
-    removeDuplicates(matches) {
-        return matches.filter((match, index, self) =>
-            index === self.findIndex(m =>
-                m.start === match.start &&
-                m.end === match.end &&
-                m.pattern === match.pattern
-            )
-        );
-    }
+	removeDuplicates(matches) {
+		const seen = new Set();
+		return matches.filter(match => {
+			const key = `${match.start},${match.end},${match.pattern}`;
+			if (seen.has(key)) return false;
+			seen.add(key);
+			return true;
+		});
+	}
 }
