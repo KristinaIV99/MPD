@@ -134,8 +134,9 @@ p {
 }
 
 .triple-space {
-    height: calc(3em * 0.5);
+    height: calc(3em * 0.7) !important;
     clear: both;
+    min-height: 1.5em;
 }
 
 hr {
