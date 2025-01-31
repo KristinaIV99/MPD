@@ -34,18 +34,22 @@ export class HtmlConverter {
     async convertToHtml(text) {
         try {
             console.log(`${this.APP_NAME} Pradedama konversija į HTML`);
+            console.log('Gautas tekstas:', text);
 
             // Pirmiausia pakeičiame dialogų brūkšnius į saugų HTML kodą
             let processed = text.replace(/–/g, '&ndash;');
+            console.log('Po dialogų brūkšnių:', processed);
             
             // Pakeičiame sekcijų skirtukus į HTML paragrafus su tarpais
             processed = processed.replace(/§SECTION_BREAK§/g, '</p><p><br><br></p><p>');
+            console.log('Po sekcijų skirtukų:', processed);
             
             // Horizontalią liniją keičiame į HR
             processed = processed.replace(/^—$/gm, '<hr>');
 
             // Konvertuojame į HTML
             let html = marked(processed);
+            console.log('Po marked konversijos:', html);
             
             // Išvalome HTML
             html = DOMPurify.sanitize(html, {
@@ -54,6 +58,7 @@ export class HtmlConverter {
                 ALLOW_DATA_ATTR: false,
                 ADD_ATTR: ['style'] // Leidžiame style atributą
             });
+            console.log('Po DOMPurify:', html);
 
             // Apsaugome, kad neprarastume tarpų
             html = html.replace(/<p><br>/g, '<p style="margin-bottom: 2em;">');
