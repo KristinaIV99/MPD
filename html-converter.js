@@ -107,15 +107,19 @@ export class HtmlConverter {
 					let markedText = text;
 
 					sortedPhrases.forEach(phrase => {
+						const textLower = markedText.toLowerCase();
+						const phraseLower = phrase.text.toLowerCase();
+						
 						// Ieškome frazės tekste
-						const index = markedText.indexOf(phrase.text);
+						const index = textLower.indexOf(phraseLower);
 						if (index !== -1) {
 							console.log(`Rasta frazė "${phrase.text}" pozicijoje ${index}`);
-							// Pakeičiame tik pirmą rastą frazę
-							markedText = markedText.replace(
-								phrase.text,
-								`<span class="phrases">${phrase.text}</span>`
-							);
+							// Paimame originalų tekstą iš tos vietos
+							const originalPhrase = markedText.slice(index, index + phrase.text.length);
+							// Pakeičiame originalų tekstą su span
+							markedText = markedText.slice(0, index) + 
+									`<span class="phrases">${originalPhrase}</span>` + 
+									markedText.slice(index + phrase.text.length);
 							hasChanges = true;
 						}
 					});
