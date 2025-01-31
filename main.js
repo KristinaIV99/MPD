@@ -150,7 +150,7 @@ class App {
         console.log(`${this.APP_NAME} Pradedama HTML konversija`);
         
         // Konvertuojame į HTML naudodami HtmlConverter
-        const htmlContent = await this.htmlConverter.convertToHtml(text);
+        let htmlContent = await this.htmlConverter.convertToHtml(text);
         
         console.log(`${this.APP_NAME} Pradedamas frazių žymėjimas`);
         htmlContent = await this.htmlConverter.markPhrases(htmlContent, phrases);
