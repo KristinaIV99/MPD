@@ -36,12 +36,17 @@ export class HtmlConverter {
             console.log(`${this.APP_NAME} Pradedama konversija į HTML`);
             console.log('Gautas tekstas:', text);
 
+            // Laikinai išsaugome trigubas eilutes
+            let processed = text.replace(/\n\n\n/g, '###TRIPLE_BREAK###');
+            console.log('Po trigubų eilučių išsaugojimo:', processed);
+            
             // Išsaugome dialogus (pakeičiame į specialų žymėjimą)
             let processed = text.replace(/^[-–]\s(.+)$/gm, '###DIALOG###$1');
             console.log('Po dialogų brūkšnių:', processed);
             
             // Horizontalią liniją keičiame į HR
-            processed = processed.replace(/^—$/gm, '<hr>');
+            processed = processed.replace(/^—$/gm, '<hr>\n');
+            console.log('Po horizontalios linijos:', processed);
             
             // Konvertuojame į HTML
             let html = marked(processed);
@@ -52,14 +57,17 @@ export class HtmlConverter {
             console.log('Po dialogų grąžinimo:', html);
             
             // Tvarkome trigubas eilutes
-            html = html.replace(/§SECTION_BREAK§/g, '</p><div class="triple-space"></div><p>');
+            html = html.replace(/###TRIPLE_BREAK###/g, '</p><div class="triple-space"></div><p>');
             console.log('Po sekcijų skirtukų:', processed);
             
+            // Tvarkome horizontalią liniją ir sekantį tekstą
+            html = html.replace(/<hr>\s*<p>/g, '<hr><p class="after-hr">');
+            console.log('Po elementų grąžinimo:', html);
 
             // Išvalome HTML
             html = DOMPurify.sanitize(html, {
                 ALLOWED_TAGS: this.ALLOWED_TAGS,
-                ALLOWED_CLASSES: ['dialog', 'triple-space'],
+                ALLOWED_CLASSES: ['dialog', 'triple-space', 'after-hr'],
                 KEEP_CONTENT: true,
                 ALLOW_DATA_ATTR: false,
             });
