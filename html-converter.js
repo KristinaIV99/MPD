@@ -1,3 +1,4 @@
+
 import { marked } from './vendor/marked.esm.js';
 import DOMPurify from './vendor/purify.es.mjs';
 
@@ -53,7 +54,7 @@ export class HtmlConverter {
             console.log('Po dialogų grąžinimo:', html);
             
             // Tvarkome trigubas eilutes (dabar naudojame §SECTION_BREAK§)
-            html = html.replace(/§SECTION_BREAK§/g, '</p><div class="triple-space"></div><p>');
+            html = html.replace(/§SECTION_BREAK§/g, '</p><div class="triple-space" style="height: 1.5em;"></div><p>');
             console.log('Po sekcijų skirtukų:', processed);
             
             // Tvarkome horizontalią liniją ir sekantį tekstą
@@ -64,6 +65,7 @@ export class HtmlConverter {
             html = DOMPurify.sanitize(html, {
                 ALLOWED_TAGS: this.ALLOWED_TAGS,
                 ALLOWED_CLASSES: ['dialog', 'triple-space', 'after-hr'],
+                ALLOWED_ATTR: ['class', 'style'],
                 KEEP_CONTENT: true,
                 ALLOW_DATA_ATTR: false,
             });
